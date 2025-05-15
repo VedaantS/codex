@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load node_extras %}
+{% block title %}
+    <title>User</title>
+{% endblock title %}
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        {% if messages %}
+            <ul>
+                {% for message in messages %}
+                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <div class="btn-group" role="group">
+                <a href="{% url 'users:search' %}" class="btn btn-default"><i class="fa fa-search"></i></a>
+                {% include "users/reset_password.html" with user=user %}
+                {%  if perms.osf.change_osfuser %}
+                    <a href="{% url 'users:get-reset-password' guid=user.guid %}" data-toggle="modal" data-target="#getResetModal" class="btn btn-default">Get password reset link</a>
+                    {% if user.confirmed %}
+                        <button class="btn btn-default disabled" data-toggle="tooltip" title="User already confirmed">Get confirmation link</button>
+                    {% else %}
+                        {% if user.unclaimed %}
+                            <a href="{% url 'users:get-claim-urls' guid=user.guid  %}" data-toggle="modal" data-target="#getUserClaimModal" class="btn btn-default">Get claim links</a>
+                        {%  else %}
+                            <a href="{% url 'users:get-confirmation' guid=user.guid  %}" data-toggle="modal" data-target="#getConfirmationModal" class="btn btn-default">Get confirmation link</a>
+                        {% endif %}
+                    {% endif %}
+                {% endif %}
+                {% include "users/merge_accounts.html" with user=user %}
+                {% include "users/GDPR_delete_user.html" with user=user %}
+                {% include "users/disable_user.html" with user=user %}
+                {% include "users/mark_spam.html" with user=user %}
+                {% include "users/reindex_user_elastic.html" with user=user %}
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <div class="modal" id="getResetModal" >
+                <div class="modal-dialog">
+                    <div class="modal-content"></div>
+                </div>
+            </div>
+            <div class="modal" id="getConfirmationModal">
+                <div class="modal-dialog">
+                    <div class="modal-content"></div>
+                </div>
+            </div>
+            <div class="modal" id="getUserClaimModal">
+                <div class="modal-dialog">
+                    <div class="modal-content"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <h2>User: <b>{{ user.username }}</b> <a href="{{ user.absolute_url }}"> ({{user.guid}})</a> </h2>
+            <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Full Name</td>
+                    <td>{{ user.fullname }}</td>
+                </tr>
+                <tr>
+                    <td>Username</td>
+                    <td>{{ user.username }}</td>
+                </tr>
+                <tr>
+                    <td>Guid</td>
+                    <td>
+                        {{ user.guid }}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Disabled</td>
+                    <td>{{ user.is_disabled }}</td>
+                </tr>
+                <tr>
+                    <td>Registered</td>
+                    <td>{{ user.is_registered }}</td>
+                </tr>
+                <tr>
+                    <td>Confirmed</td>
+                    <td>{{ user.is_confirmed }}</td>
+                </tr>
+                <tr>
+                    <td>Last login</td>
+                    <td>{{ user.last_login }}</td>
+                </tr>
+                <tr>
+                    <td>Emails</td>
+                    <td>
+                        {% for email in user.emails.all %}
+                            <li>
+                                {% if email == user.username %}
+                                    <strong>Primary: </strong>
+                                    {{ email.address }}
+                                    <a href="" class="btn btn-default disabled">Email</a>
+                                {% else %}
+                                    {{ email.address }}
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </td>
+                </tr>
+                {% include "users/two_factor.html" with user=user %}
+
+                <tr>
+                    <td>User is spammy</td>
+                    <td>
+                        {{ user.is_spammy }}
+                    </td>
+                </tr>
+                {% include "users/add_system_tags.html" with user=user %}
+                {% include "nodes/spam_status.html" with resource=user %}
+                <tr>
+                    <td>Preprints</td>
+                    <td>
+                        {% include "util/node_preprint_paginated_list.html" with items=preprints items_paginator=preprint_page resource_type="preprint" current_other_param=current_node %}
+                        * In Preprints, public means Verified Publishable.
+                    </td>
+                </tr>
+                <tr>
+                    <td>Nodes</td>
+                    <td>
+                        {% include "util/node_preprint_paginated_list.html" with items=nodes items_paginator=node_page resource_type="node" current_other_param=current_preprint %}
+                    </td>
+                </tr>
+            </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock content %}

@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load node_extras %}
+{% block title %}
+    <title>{{ node.type|cut:'osf.'|title }}: {{node.guid}} </title>
+{% endblock title %}
+{% block content %}
+    <div class="container-fluid">
+        <ul class="messages">
+            {% for message in messages %}
+                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="btn-group" role="group">
+                    <a href="{% url 'nodes:search' %}" class="btn btn-primary"> <i class="fa fa-search"></i></a>
+                    <a href="{% url 'nodes:node-logs' guid=node.guid %}" class="btn btn-primary">View Logs</a>
+                    {% include "nodes/remove_node.html" with node=node %}
+                    {% include "nodes/registration_force_archive.html" with node=node %}
+                    {% include "nodes/make_private.html" with node=node %}
+                    {% include "nodes/make_public.html" with node=node %}
+                    {% include "nodes/mark_spam.html" with node=node %}
+                    {% include "nodes/reindex_node_share.html" with node=node %}
+                    {% include "nodes/reindex_node_elastic.html" with node=node %}
+                    {% include "nodes/resync_datacite.html" with node=node %}
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <h2>{{ node.type|cut:'osf.'|title }}: <b>{{ node.title }}</b> <a href="{{ node.absolute_url }}"> ({{node.guid}})</a> </h2>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Guid</td>
+                        <td>{{ node.guid }}</td>
+                    </tr>
+                    <tr>
+                        <td>Title</td>
+                        <td>{{ node.title }}</td>
+                    </tr>
+                    {% if node.is_registration and node.registered_from %}
+                        <tr>
+                            <td>Project</td>
+                            <td><a href="{{ node.registered_from | reverse_node }}">{{ node.registered_from.title }}</a></td>
+                        </tr>
+                    {% endif %}
+                    <tr>
+                        <td>Deleted</td>
+                        <td>{{ node.deleted }}</td>
+                    </tr>
+                    <tr>
+                        <td>Sanction</td>
+                        <td>{{ node.sanction }}</td>
+                    </tr>
+                    <tr>
+                        <td>Public</td>
+                        <td>{{ node.is_public }}</td>
+                    </tr>
+                    <tr>
+                        <td>Moderation State</td>
+                        <td>{{ node.moderation_state }}
+                        <form method="post" action="{% url 'nodes:node-update-mod-state' node.guid %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-primary">Update Moderation State</button>
+                        </form>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Creator</td>
+                        <td><a href="{{ node.creator | reverse_user }}">{{ node.creator }}</a></td>
+                    </tr>
+                    <tr>
+                        <td>Provider</td>
+                        {% if node.provider %}
+                            <td><a href="{{ node | reverse_registration_provider }}">{{ node.provider.name }}</a></td>
+                        {% else %}
+                            <td>None</td>
+                        {% endif %}
+                    </tr>
+                    <tr>
+                        <td>Parent</td>
+                        <td>
+                            {% if not node.parent %}
+                                None
+                            {% else %}
+                                <a href="{{ node.parent | reverse_node }}">{{ node.parent }}</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>IA url</td>
+                        <td>{{ node.ia_url }}</td>
+                    </tr>
+                    {% include "nodes/contributors.html" with node=node %}
+                    {% include "nodes/spam_status.html" with resource=node %}
+                    {% include "nodes/draft_registrations.html" with draft_registrations=node.draft_registrations.all %}
+                    {% include "nodes/schema_responses.html" with schema_responses=node.schema_responses.all %}
+                    {% include "nodes/retraction.html" with retraction=node.retraction %}
+                    {% include "nodes/registrations.html" with registrations=node.registrations.all %}
+                    {% include "nodes/children.html" with children=node.children.all %}
+                    {% include "nodes/embargo.html" with embargo=node.embargo is_registration=node.is_registration%}
+                    {% include "nodes/embargo_termination_approval.html" with embargo_termination_approval=node.embargo_termination_approval %}
+                    {% include "nodes/registration_approval.html" with registration_approval=node.registration_approval %}
+                    {% include "nodes/actions.html" with actions=node.actions.all|order_by:"created" %}
+                    {% include "nodes/storage_usage.html" with node=node %}
+
+                    <tr>
+                        <td colspan="2">
+                            <h3>Duplicate Notifications</h3>
+                            {% if duplicates %}
+                                <form method="post" action="{% url 'nodes:node-remove-notifications' node.guid %}">
+                                    {% csrf_token %}
+                                    <table class="table table-striped table-hover table-responsive">
+                                        <thead>
+                                            <tr>
+                                                <th>Select</th>
+                                                <th>Event Name</th>
+                                                <th>Created</th>
+                                                <th>Count</th>
+                                                <th>Email Transactional</th>
+                                                <th>Email Digest</th>
+                                                <th>None</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        {% for notification in duplicates %}
+                                            <tr>
+                                                <td><input type="checkbox" name="selected_notifications" value="{{ notification.id }}"></td>
+                                                <td>{{ notification.event_name }}</td>
+                                                <td>{{ notification.created }}</td>
+                                                <td>{{ notification.count }}</td>
+                                                <td>{{ notification.email_transactional|join:", " }}</td>
+                                                <td>{{ notification.email_digest|join:", " }}</td>
+                                                <td>{{ notification.none|join:", " }}</td>
+                                            </tr>
+                                        {% empty %}
+                                            <tr>
+                                                <td colspan="6">No duplicate notifications found!</td>
+                                            </tr>
+                                        {% endfor %}
+                                        </tbody>
+                                    </table>
+                                    <button type="submit" class="btn btn-danger">Delete Selected</button>
+                                </form>
+                            {% else %}
+                                <p>No duplicate notifications found.</p>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock content %}
+

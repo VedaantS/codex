@@ -1,0 +1,59 @@
+{
+  "atomicSchema": true,
+  "name": "ASIST Registration Results",
+  "version": 2,
+  "description": null,
+  "blocks": [
+    {
+      "block_type": "page-heading",
+      "display_text": "Results Registration Information"
+    },
+    {
+      "block_type": "question-label",
+      "help_text": "Please provide a brief summary of the results enclosed in your results registration document. This includes results of analyses set forth in the preregistration and results of any post hoc analyses.",
+      "display_text": "Results summary",
+      "example_text": "Hypothesis #1 was confirmed: Navigation skill determines search strategy (p = 0.023). Hypothesis was not confirmed: H2 was not confirmed: Triage is more efficient before anticipated death of high value victims than after (p = .273).  "
+    },
+    {
+      "block_type": "long-text-input",
+      "required": true
+    },
+    {
+      "block_type": "question-label",
+      "help_text": "Please provide a link to the study preregistration this study relies upon.",
+      "display_text": "Study preregistration link"
+    },
+    {
+      "block_type": "short-text-input",
+      "required": true
+    },
+    {
+      "block_type": "question-label",
+      "help_text": "Please provide a link to the preregistration this results registration is following upon.",
+      "display_text": "Preregistration link"
+    },
+    {
+      "block_type": "short-text-input",
+      "required": true
+    },
+    {
+      "block_type": "question-label",
+      "help_text": "Please link to the datasets used in running your the preregistered plans/analyses.",
+      "display_text": "Dataset used",
+      "example_text": "The following datasets were used in running our preregistered analyses: https://console.cloud.google.com/XXXX"
+    },
+    {
+      "block_type": "short-text-input",
+      "required": true
+    },
+    {
+      "block_type": "question-label",
+      "help_text": "Please attach the file containing your hypothesis/capability preregistration and results.",
+      "display_text": "Results registration"
+    },
+    {
+      "block_type": "file-input",
+      "required": true
+    }
+  ]
+}

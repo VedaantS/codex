@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load node_extras %}
+{% block title %}
+    <title>Preprint</title>
+{% endblock title %}
+{% block content %}
+    <div class="container-fluid">
+        <ul class="messages">
+            {% for message in messages %}
+                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="btn-group" role="group">
+                    <a href="{% url 'preprints:search' %}"
+                       class="btn btn-primary">
+                        <i class="fa fa-search"></i>
+                    </a>
+                    {% include "preprints/remove_preprint.html" with preprint=preprint %}
+                    {% include "preprints/mark_spam.html" with preprint=preprint %}
+                    {% include "preprints/reindex_preprint_share.html" with preprint=preprint %}
+                    {% include "preprints/reindex_preprint_elastic.html" with preprint=preprint %}
+                    {% include "preprints/resync_crossref.html" with preprint=preprint %}
+                    {% include "preprints/make_private.html" with preprint=preprint %}
+                    {% include "preprints/make_public.html" with preprint=preprint %}
+                    {% include "preprints/make_published.html" with preprint=preprint %}
+                    {% include "preprints/fix_editing.html" with preprint=preprint %}
+                    {% include "preprints/assign_new_version.html" with preprint=preprint %}
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <table class="table table-striped">
+                <h2>Preprint: <b>{{ preprint.title }}</b> <a href="{{ preprint.absolute_url }}"> ({{preprint.guid}})</a> </h2>
+
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>GUID</td>
+                        <td>{{ preprint.guid }}</td>
+                    </tr>
+                    <tr>
+                        <td>Title</td>
+                        <td>{{ preprint.title }}</td>
+                    </tr>
+                    <tr>
+                        <td>Date Created</td>
+                        <td>{{ preprint.created | date }}</td>
+                    </tr>
+                    <tr>
+                        <td>Date Modified</td>
+                        <td>{{ preprint.modified | date }}</td>
+                    </tr>
+                    <tr>
+                        <td>Creator</td>
+                        <td>
+                             <a href="{{ preprint.creator | reverse_user }}">
+                                {{ preprint.creator }}
+                            </a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Deleted</td>
+                        <td>{{ preprint.deleted | date }}</td>
+                    </tr>
+                    <tr>
+                        <td>Public</td>
+                        <td>{{ preprint.is_public }}</td>
+                    </tr>
+                    <tr>
+                        <td>Published</td>
+                        <td>{{ preprint.is_published }}</td>
+                    </tr>
+                    {%  if preprint.is_published %}
+                        <tr>
+                            <td>Date Published</td>
+                            <td>{{ preprint.date_published }} UTC</td>
+                        </tr>
+                    {%  endif %}
+                    <tr>
+                        <td>Verified Publishable</td>
+                        <td>{{ preprint.verified_publishable }}</td>
+                    </tr>
+                    {% if preprint.node %}
+                        <tr>
+                            <td>Node</td>
+                            <td>
+                                <a href="{{ preprint.node | reverse_node }}">{{ preprint.node.title }}</a>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td>Node</td>
+                            <td>
+                                No Node for this Preprint
+                            </td>
+                        </tr>
+                    {% endif %}
+                    {% include "preprints/provider.html" with preprint=preprint %}
+                    {% include "preprints/machine_state.html" with preprint=preprint %}
+                    <tr>
+                        <td>Subjects</td>
+                        <td>
+                            <ul>
+                                {% for subject in preprint.subjects.all %}
+                                    <li>{{ subject.text }}</li>
+                                {% endfor %}
+                            </ul>
+                        </td>
+                    </tr>
+                    {% include "preprints/contributors.html" with preprint=preprint %}
+                    {% include "nodes/spam_status.html" with resource=preprint %}
+                    {% include "preprints/withdraw_request.html" with preprint=preprint %}
+                    {% include "preprints/unwithdraw_request.html" with preprint=preprint %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock content %}
+{% block bottom_js %}
+    <script src="/static/js/preprints/preprints.js"></script>
+    <script>
+        window.templateVars = {
+            'reVersionPreprint': '{% url 'preprints:re-version-preprint' guid=preprint.guid %}',
+        }
+    </script>
+{% endblock %}

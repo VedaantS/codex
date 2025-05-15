@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1> Management Commands </h1>
+    <section class="content">
+        <ul class="messages">
+            {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+
+        <p> Use the buttons below to manually run management commands. </p>
+        <div class="row">
+            <h4> <u>Update Waffle Flags and Switches </u>
+            </h4>
+            <ul>
+                Use this management command to update the flags and switches on OSF
+                with the flags and switches in osf/features/switches.py and osf/features/flags.py
+                <br>
+                <form method="post"
+                      action="{% url 'management:waffle_flag'%}">
+                    {% csrf_token %}
+                    <input class="btn btn-success" type="submit"
+                           value="Run" />
+                </form>
+            </ul>
+            <h4> <u>Update Registration Schemas and Schema Blocks </u>
+            </h4>
+            <ul>
+                Use this management command to update the schemas and schma blocks
+                for Registrations to match values in website/project/metadata
+                <br>
+                <form method="post"
+                      action="{%url 'management:update_registration_schemas'%}">
+                    {% csrf_token %}
+                    <input class="btn btn-success" type="submit"
+                           value="Run" />
+                </form>
+            </ul>
+            <h4> <u>Download CSV of spam </u>
+            </h4>
+            <ul>
+                Use this management command to download a CSV of spam content that matches a regular expression
+                in the last number of specified days.
+                <br>Specifying "Fast" will only check against "title" and "description."
+                <br>
+                <a href="https://cheatography.com/davechild/cheat-sheets/regular-expressions/" target="_blank">Here is a nice cheat sheet for regular expressions</a>
+                <br>
+                <form method="post"
+                      action="{%url 'management:get_spam_csv'%}">
+                    {% csrf_token %}
+                    <label>Regex:</label>  <input type="text" name="regex_get"/><br>
+                    <label>Days:</label>  <input type="text" name="days_get" value=1 /><br>
+                    <label>Nodes:</label>   <input type="checkbox" name="node_get" checked /><br>
+                    <label>Registrations:</label>  <input type="checkbox" name="registration_get" checked /><br>
+                    <label>Preprints:</label>   <input type="checkbox" name="preprint_get" checked /><br>
+                    <label>Fast:</label>   <input type="checkbox" name="fast_get" checked /><br>
+                    <input class="btn btn-success" type="submit"
+                           value="Run" />
+                </form>
+            </ul>
+            <h4> <u>Ban spam users by regular expression</u>
+            </h4>
+            <ul>
+                Use this management command to spam all users that created content that matches the specified regular expression.<br>
+                <a href="https://cheatography.com/davechild/cheat-sheets/regular-expressions/" target="_blank">Here is a nice cheat sheet for regular expressions</a>
+                <br>
+                <b> <p style="color:red">NOTE: This action is PERMANENT. Be EXTREMELY sure you know what you're doing before you press this.</p></b>
+                <form method="post"
+                      action="{%url 'management:ban_spam_regex'%}">
+                    {% csrf_token %}
+                    <label>Regex:</label> <input type="text" name="regex_ban"/><br>
+                    <label>Days:</label> <input type="text" name="days_ban" value=1 /><br>
+                    <label>Nodes:</label>   <input type="checkbox" name="node_ban" checked /><br>
+                    <label>Registrations:</label>   <input type="checkbox" name="registration_ban" checked /><br>
+                    <label>Preprints:</label>  <input type="checkbox" name="preprint_ban" checked /><br>
+                    <input class="btn btn-danger" type="submit" value="Run" style="color: white" />
+                </form>
+            </ul>
+            <section>
+                <h4><u>Daily Reporters, Go!</u></h4>
+                <p>Use this management command to run all daily metrics reports.</p>
+                <form method="post"
+                      action="{% url 'management:daily_reporters_go'%}">
+                    {% csrf_token %}
+                    <label for="report_date">
+                        Report date:
+                    </label>
+                    <input type="date" name="report_date" id="report_date"/>
+                    (default: yesterday)
+                    <br>
+                    <nav>
+                        <input class="btn btn-success" type="submit" value="Run" />
+                    </nav>
+                </form>
+            </section>
+            <section>
+                <h4><u>Monthly Reporters, Go!</u></h4>
+                <p>Use this management command to run all daily metrics reports.</p>
+                <form method="post"
+                      action="{% url 'management:monthly_reporters_go'%}">
+                    {% csrf_token %}
+                    <label for="monthly_report_date">
+                        Report date:
+                    </label>
+                    <input type="date" name="monthly_report_date" id="monthly_report_date"/>
+                    (default: yesterday)
+                    <br>
+                    <nav>
+                        <input class="btn btn-success" type="submit" value="Run" />
+                    </nav>
+                </form>
+            </section>
+            <section>
+                <h4><u>Ingest Cedar Metadata templates</u></h4>
+                <p>
+                    Use this management command to ingest CEDAR metadata templates from CEDAR Workbench.
+                    Note: This requires CEDAR_API_HOST and CEDAR_API_KEY to be set for the environment.
+                </p>
+                <form method="post"
+                      action="{% url 'management:ingest_cedar_metadata_templates'%}">
+                    {% csrf_token %}
+                    <nav>
+                        <input class="btn btn-success" type="submit" value="Run" />
+                    </nav>
+                </form>
+            </section>
+            <section>
+                <h4><u>Resync with CrossRef and DataCite</u></h4>
+                <p>
+                    Use this management command to resync all preprints with CrossRef and public nodes/registrations with DataCite.
+                </p>
+                <form method="post"
+                      action="{% url 'management:bulk-resync'%}">
+                    {% csrf_token %}
+                    <label>Only preprints missing DOI:</label>  <input type="checkbox" name="missing_preprint_dois_only"/><br>
+                    <nav>
+                        <input class="btn btn-success" type="submit" value="Run" />
+                    </nav>
+                </form>
+            </section>
+            <section>
+                <h4><u>Resync empty metadata dataarchive registrations with DataCite</u></h4>
+                <p>
+                    Use this management command to resync all empty public metadata dataarchive Registrations with DataCite.
+                </p>
+                <form method="post"
+                      action="{% url 'management:empty-metadata-dataarchive-registration-bulk-resync'%}">
+                    {% csrf_token %}
+                    <nav>
+                        <input class="btn btn-success" type="submit" value="Run" />
+                    </nav>
+                </form>
+            </section>
+        </div>
+    </section>
+{% endblock %}

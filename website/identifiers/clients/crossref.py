@@ -1,0 +1,298 @@
+from furl import furl
+import lxml
+import lxml.builder
+import time
+import logging
+
+import requests
+from django.db.models import QuerySet
+
+from .exceptions import CrossRefRateLimitError
+from framework.auth.utils import impute_names
+from website.identifiers.utils import remove_control_characters
+from website.identifiers.clients.base import AbstractIdentifierClient
+from website import settings
+
+logger = logging.getLogger(__name__)
+
+CROSSREF_NAMESPACE = 'http://www.crossref.org/schema/5.3.1'
+CROSSREF_SCHEMA_LOCATION = 'http://www.crossref.org/schema/5.3.1 http://www.crossref.org/schemas/crossref5.3.1.xsd'
+CROSSREF_ACCESS_INDICATORS = 'http://www.crossref.org/AccessIndicators.xsd'
+CROSSREF_RELATIONS = 'http://www.crossref.org/relations.xsd'
+CROSSREF_SCHEMA_VERSION = '5.3.1'
+JATS_NAMESPACE = 'http://www.ncbi.nlm.nih.gov/JATS1'
+XSI = 'http://www.w3.org/2001/XMLSchema-instance'
+CROSSREF_DEPOSITOR_NAME = 'Open Science Framework'
+
+CROSSREF_SUFFIX_LIMIT = 10
+CROSSREF_SURNAME_LIMIT = 60
+CROSSREF_GIVEN_NAME_LIMIT = 60
+
+
+class CrossRefClient(AbstractIdentifierClient):
+
+    def __init__(self, base_url):
+        self.base_url = base_url
+
+    def get_credentials(self):
+        return (settings.CROSSREF_USERNAME, settings.CROSSREF_PASSWORD)
+
+    def build_doi(self, preprint):
+        prefix = preprint.provider.doi_prefix
+        return settings.DOI_FORMAT.format(prefix=prefix, guid=preprint._id)
+
+    def build_metadata(self, preprint, include_relation=True):
+        """Return the crossref metadata XML document for a given preprint as a string for DOI minting purposes
+
+        :param preprint: the preprint, or list of preprints to build metadata for
+        """
+        if isinstance(preprint, (list, QuerySet)):
+            preprints = preprint
+        else:
+            preprints = [preprint]
+
+        element = lxml.builder.ElementMaker(nsmap={
+            None: CROSSREF_NAMESPACE,
+            'xsi': XSI},
+        )
+
+        # batch_id is used to get the guid of preprints for error messages down the line
+        # but there is a size limit -- for bulk requests, include only the first 5 guids
+        batch_id = ','.join([prep._id for prep in preprints[:5]])
+
+        head = element.head(
+            element.doi_batch_id(batch_id),
+            element.timestamp(str(int(time.time()))),
+            element.depositor(
+                element.depositor_name(CROSSREF_DEPOSITOR_NAME),
+                element.email_address(settings.CROSSREF_DEPOSITOR_EMAIL)
+            ),
+            element.registrant('Center for Open Science')
+        )
+        # if this is a batch update, let build_posted_content determine status for each preprint
+        body = element.body()
+        for preprint in preprints:
+            body.append(self.build_posted_content(preprint, element, include_relation))
+
+        root = element.doi_batch(
+            head,
+            body,
+            version=CROSSREF_SCHEMA_VERSION
+        )
+        root.attrib['{%s}schemaLocation' % XSI] = CROSSREF_SCHEMA_LOCATION
+        return lxml.etree.tostring(root)
+
+    def build_posted_content(self, preprint, element, include_relation):
+        """Build the <posted_content> element for a single preprint
+        preprint - preprint to build posted_content for
+        element - namespace element to use when building parts of the XML structure
+        """
+        from osf.models import SpamStatus
+
+        posted_content = element.posted_content(
+            element.group_title(preprint.provider.name),
+            type='preprint'
+        )
+        status = self.get_status(preprint)
+        if status == 'public':
+            posted_content.append(element.contributors(*self._crossref_format_contributors(element, preprint)))
+
+        private_title = 'REMOVED DUE TO POLICY VIOLATIONS' if preprint.spam_status == SpamStatus.SPAM else 'WITHDRAWN'
+        title = element.title(remove_control_characters(preprint.title)) if status == 'public' else element.title(private_title)
+        posted_content.append(element.titles(title))
+
+        posted_content.append(element.posted_date(*self._crossref_format_date(element, preprint.date_published)))
+
+        if status == 'public':
+            posted_content.append(element.item_number(f'osf.io/{preprint._id}'))
+
+            if preprint.description:
+                posted_content.append(
+                    element.abstract(element.p(remove_control_characters(preprint.description)), xmlns=JATS_NAMESPACE)
+                )
+
+            if preprint.license and preprint.license.node_license.url:
+                posted_content.append(
+                    element.program(
+                        element.license_ref(preprint.license.node_license.url,
+                                            start_date=preprint.date_published.strftime('%Y-%m-%d')),
+                        xmlns=CROSSREF_ACCESS_INDICATORS
+                    )
+                )
+            else:
+                posted_content.append(
+                    element.program(xmlns=CROSSREF_ACCESS_INDICATORS)
+                )
+        relations_program = element.program(xmlns=CROSSREF_RELATIONS)
+
+        if preprint.article_doi and preprint.article_doi != self.build_doi(preprint) and include_relation:
+            relations_program.append(
+                element.related_item(
+                    element.intra_work_relation(
+                        preprint.article_doi,
+                        **{'relationship-type': 'isPreprintOf', 'identifier-type': 'doi'}
+                    )
+                )
+            )
+
+        preprint_versions = preprint.get_preprint_versions(include_rejected=False)
+        if preprint_versions:
+            for preprint_version, previous_version in zip(preprint_versions, preprint_versions[1:]):
+                if preprint_version.version > preprint.version:
+                    continue
+
+                minted_doi = previous_version.get_identifier_value('doi')
+                if not minted_doi:
+                    previous_doi = self.build_doi(previous_version)
+
+                related_item = element.related_item(
+                    element.intra_work_relation(
+                        minted_doi or previous_doi,
+                        **{'relationship-type': 'isVersionOf', 'identifier-type': 'doi'}
+                    )
+                )
+                relations_program.append(related_item)
+
+        if len(relations_program) > 0:
+            posted_content.append(relations_program)
+
+        doi = self.build_doi(preprint)
+        doi_data = [
+            element.doi(doi),
+            element.resource(settings.DOMAIN + preprint._id)
+        ]
+        posted_content.append(element.doi_data(*doi_data))
+
+        return posted_content
+
+    def _process_crossref_name(self, contributor):
+        # Adapted from logic used in `api/citations/utils.py`
+        # If the user has a family and given name, use those
+        if contributor.family_name and contributor.given_name:
+            given = contributor.given_name
+            middle = contributor.middle_names
+            family = contributor.family_name
+            suffix = contributor.suffix
+        else:
+            names = impute_names(contributor.fullname)
+            given = names.get('given')
+            middle = names.get('middle')
+            family = names.get('family')
+            suffix = names.get('suffix')
+
+        given_name = ' '.join([given, middle]).strip()
+        given_stripped = remove_control_characters(given_name)
+        # For crossref, given_name is not allowed to have numbers or question marks
+        given_processed = ''.join(
+            [char for char in given_stripped if (not char.isdigit() and char != '?')]
+        )
+        surname_processed = remove_control_characters(family)
+
+        surname = surname_processed or given_processed or contributor.fullname
+        processed_names = {'surname': surname[:CROSSREF_SURNAME_LIMIT].strip()}
+        if given_processed and surname_processed:
+            processed_names['given_name'] = given_processed[:CROSSREF_GIVEN_NAME_LIMIT].strip()
+        if suffix and (surname_processed or given_processed):
+            processed_names['suffix'] = suffix[:CROSSREF_SUFFIX_LIMIT].strip()
+
+        return processed_names
+
+    def _crossref_format_contributors(self, element, preprint):
+        contributors = []
+        for index, contributor in enumerate(preprint.visible_contributors):
+            if index == 0:
+                sequence = 'first'
+            else:
+                sequence = 'additional'
+            name_parts = self._process_crossref_name(contributor)
+            person = element.person_name(sequence=sequence, contributor_role='author')
+            if name_parts.get('given_name'):
+                person.append(element.given_name(name_parts['given_name']))
+            person.append(element.surname(name_parts['surname']))
+            if name_parts.get('suffix'):
+                person.append(element.suffix(remove_control_characters(name_parts['suffix'])))
+            affiliations = [
+                element.institution(
+                    element.institution_name(institution.name),
+                    element.institution_id(
+                        institution.ror_uri,
+                        type='ror'
+                    ),
+                ) for institution in contributor.get_affiliated_institutions() if institution.ror_uri
+            ]
+            if affiliations:
+                person.append(element.affiliations(*affiliations))
+
+            orcid = contributor.get_verified_external_id('ORCID', verified_only=True)
+            if orcid:
+                person.append(
+                    element.ORCID(f'https://orcid.org/{orcid}', authenticated='true')
+                )
+
+            contributors.append(person)
+
+        return contributors
+
+    def _crossref_format_date(self, element, date):
+        elements = [
+            element.month(date.strftime('%m')),
+            element.day(date.strftime('%d')),
+            element.year(date.strftime('%Y'))
+        ]
+        return elements
+
+    def _build_url(self, **query):
+        url = furl(self.base_url)
+        url.args.update(query)
+        return url.url
+
+    def create_identifier(self, preprint, category, include_relation=True):
+        if category == 'doi':
+            metadata = self.build_metadata(preprint, include_relation)
+            doi = self.build_doi(preprint)
+            username, password = self.get_credentials()
+            logger.info(f'Sending metadata for DOI {doi}:\n{metadata}')
+
+            # Crossref sends an email to CROSSREF_DEPOSITOR_EMAIL to confirm
+            response = requests.post(
+                self._build_url(
+                    operation='doMDUpload',
+                    login_id=username,
+                    login_passwd=password,
+                    fname=f'{preprint._id}.xml'
+                ),
+                files={'file': (f'{preprint._id}.xml', metadata)},
+            )
+            if response.status_code == 429:
+                raise CrossRefRateLimitError(response.text)
+
+            return {'doi': doi}
+
+        raise NotImplementedError()
+
+    def update_identifier(self, preprint, category):
+        return self.create_identifier(preprint, category)
+
+    def get_status(self, preprint):
+        return 'public' if preprint.verified_publishable and not preprint.is_retracted else 'unavailable'
+
+    def bulk_create(self, metadata, filename):
+        # Crossref sends an email to CROSSREF_DEPOSITOR_EMAIL to confirm
+        username, password = self.get_credentials()
+        requests.post(
+            self._build_url(
+                operation='doMDUpload',
+                login_id=username,
+                login_passwd=password,
+                fname=f'{filename}.xml'
+            ),
+            files={'file': (f'{filename}.xml', metadata)},
+        )
+
+        logger.info('Sent a bulk update of metadata to CrossRef')
+
+
+class ECSArXivCrossRefClient(CrossRefClient):
+
+    def get_credentials(self):
+        return (settings.ECSARXIV_CROSSREF_USERNAME, settings.ECSARXIV_CROSSREF_PASSWORD)

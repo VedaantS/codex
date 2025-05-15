@@ -1,0 +1,2 @@
+class ConferenceError(Exception):
+    pass
