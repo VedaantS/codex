@@ -32,9 +32,10 @@ If that returns a `command not found` interface, download PostgreSQL by typing i
 Then, run these commands in your terminal (or inside `psql` as a superuser like `postgres`):
 
 ```sql
--- Connect as a superuser, e.g. psql -U postgres
+psql -U postgres
 CREATE USER jaivirsingh WITH PASSWORD 'my_password';
 CREATE DATABASE jaivirsingh OWNER jaivirsingh;
+exit
 ```
 ---
 
