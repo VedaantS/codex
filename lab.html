@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lab | Atlantis Codex</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+  <script src="https://kit.fontawesome.com/dac0a9835a.js" crossorigin="anonymous"></script>
+  <style>
+    body { font-family: 'Space Grotesk', sans-serif; }
+    .glass { backdrop-filter: blur(14px) saturate(180%); background: rgba(10, 10, 30, 0.06); }
+    .holo-glow { box-shadow: 0 0 0.5px rgba(0,255,255,0.6), 0 0 8px rgba(0,255,255,0.2), 0 0 40px rgba(0,255,255,0.05); transition: box-shadow 0.4s ease-in-out; }
+    .holo-glow:hover { box-shadow: 0 0 1px rgba(0,255,255,0.9), 0 0 12px rgba(0,255,255,0.4), 0 0 60px rgba(0,255,255,0.1); }
+  </style>
+</head>
+<body class="bg-black text-white antialiased overflow-x-hidden">
+  <nav class="fixed top-0 w-full flex justify-between items-center px-10 py-4 glass border-b border-cyan-500/10 z-50" style="z-index: 11;">
+    <a href="/" class="text-2xl font-bold tracking-wide text-cyan-300">atlantis [CODEX]</a>
+    <ul class="flex space-x-8 text-sm">
+      <li><a href="#" class="hover:text-cyan-400 transition">Home</a></li>
+      <li><a href="/kdmap.html" class="hover:text-cyan-400 transition">Frontier</a></li>
+      <li><a href="/labs.html" class="hover:text-cyan-400 transition">Labs</a></li>
+      <li><a href="/chat.html" class="hover:text-cyan-400 transition">Chat</a></li>
+      <li><a href="/profile.html" class="hover:text-cyan-400 transition">Profile</a></li>
+    </ul>
+  </nav>
+  <main style="padding-top: 80px; min-height: 100vh; background: #000;">
+    <div id="lab-content" class="max-w-3xl mx-auto"></div>
+  </main>
+  <footer class="py-8 text-center glass mt-16 relative z-10 border-t border-cyan-500/10">
+    <p class="text-sm text-cyan-200">&copy; 2025 Atlantis. All rights reserved.</p>
+  </footer>
+  <script>
+    function getQueryParam(name) {
+      const url = new URL(window.location.href);
+      return url.searchParams.get(name);
+    }
+    const labId = getQueryParam('id');
+    const createMode = getQueryParam('create');
+    const container = document.getElementById('lab-content');
+    if (createMode) {
+      container.innerHTML = `
+        <h1 class="text-3xl font-bold text-cyan-200 mb-6 text-center">Create New Lab</h1>
+        <form id="create-lab-form" class="glass p-8 rounded-lg border border-cyan-500/10">
+          <label class="block mb-2">Lab Name <input name="name" required class="w-full p-2 rounded bg-black/40 border border-cyan-500/20 mb-4" /></label>
+          <label class="block mb-2">Affiliation <input name="affiliation" class="w-full p-2 rounded bg-black/40 border border-cyan-500/20 mb-4" /></label>
+          <label class="block mb-2">Description <textarea name="description" class="w-full p-2 rounded bg-black/40 border border-cyan-500/20 mb-4"></textarea></label>
+          <button type="submit" class="px-6 py-2 bg-cyan-700 text-white rounded holo-glow">Create Lab</button>
+        </form>
+      `;
+      document.getElementById('create-lab-form').onsubmit = async function(e) {
+        e.preventDefault();
+        const form = e.target;
+        const body = {
+          name: form.name.value,
+          affiliation: form.affiliation.value,
+          description: form.description.value
+        };
+        const res = await fetch('/labs', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + (localStorage.access_token || '')
+          },
+          body: JSON.stringify(body)
+        });
+        if (res.ok) {
+          const data = await res.json();
+          window.location = '/lab.html?id=' + data.id;
+        } else {
+          alert('Failed to create lab.');
+        }
+      }
+    } else if (labId) {
+      fetch(`/lab/${labId}`, { headers: { 'Authorization': 'Bearer ' + (localStorage.access_token || '') }}).then(async res => {
+        if (!res.ok) { container.innerHTML = '<div class="text-red-400">Lab not found.</div>'; return; }
+        const lab = await res.json();
+        container.innerHTML = `
+          <h1 class="text-3xl font-bold text-cyan-200 mb-2 text-center">${lab.name}</h1>
+          <div class="text-cyan-100 text-center mb-2">${lab.affiliation || ''}</div>
+          <div class="mb-4 text-cyan-200 text-center">${lab.description || ''}</div>
+          <div class="glass p-6 rounded-lg mb-6 border border-cyan-500/10">
+            <h2 class="text-lg font-bold text-cyan-300 mb-2">Members</h2>
+            <ul class="mb-2">${lab.members.map(m => `<li class="mb-1">${m.name || m.user_id} <span class="text-xs text-cyan-400 ml-2">${m.role}</span></li>`).join('')}</ul>
+            <button id="add-member-btn" class="px-4 py-1 bg-cyan-800 text-white rounded holo-glow mt-2">Add Member</button>
+            <form id="add-member-form" class="hidden mt-2">
+              <input name="user_id" placeholder="User ID" required class="p-2 rounded bg-black/40 border border-cyan-500/20 mr-2" />
+              <select name="role" class="p-2 rounded bg-black/40 border border-cyan-500/20 mr-2">
+                <option value="member">Member</option>
+                <option value="PI">PI</option>
+              </select>
+              <button type="submit" class="px-4 py-1 bg-cyan-700 text-white rounded">Add</button>
+            </form>
+          </div>
+          <div class="glass p-6 rounded-lg border border-cyan-500/10">
+            <h2 class="text-lg font-bold text-cyan-300 mb-2">Lab Experiments</h2>
+            <ul>${lab.experiments.map(e => `<li class="mb-2"><a href="/experiment.html?id=${e.id}" class="text-cyan-400 underline">${e.title}</a> <span class="text-xs text-cyan-200 ml-2">by ${e.owner_id}</span></li>`).join('')}</ul>
+          </div>
+        `;
+        document.getElementById('add-member-btn').onclick = function() {
+          document.getElementById('add-member-form').classList.toggle('hidden');
+        };
+        document.getElementById('add-member-form').onsubmit = async function(e) {
+          e.preventDefault();
+          const form = e.target;
+          const body = {
+            user_id: form.user_id.value,
+            role: form.role.value
+          };
+          const res = await fetch(`/lab/${labId}/members`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + (localStorage.access_token || '')
+            },
+            body: JSON.stringify(body)
+          });
+          if (res.ok) {
+            window.location.reload();
+          } else {
+            alert('Failed to add member.');
+          }
+        }
+      });
+    } else {
+      container.innerHTML = '<div class="text-cyan-300">No lab selected.</div>';
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,189 @@
+<template id="experiment-settings-template">
+      <div class="glass rounded-2xl p-8 holo-glow scanlines max-w-2xl mx-auto my-12 relative z-10">
+        <h3 class="text-2xl font-bold text-cyan-200 mb-4">Experiment Settings</h3>
+        <div class="mb-6">
+          <label class="block text-cyan-200 font-semibold mb-2">Experiment Title</label>
+          <input type="text" class="w-full p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent" data-settings="title" />
+        </div>
+        <div class="mb-6">
+          <label class="block text-cyan-200 font-semibold mb-2">Protocol Version</label>
+          <div class="flex gap-2 items-center">
+            <select class="p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent" data-settings="version"></select>
+            <button class="px-3 py-1 glass rounded border border-cyan-400/20 text-cyan-200 hover:border-cyan-300 text-xs" data-settings="fork">Fork</button>
+            <span class="text-cyan-100/70 text-xs ml-2" data-settings="forked-from"></span>
+          </div>
+        </div>
+        <div class="mb-6">
+          <label class="block text-cyan-200 font-semibold mb-2">Collaborators</label>
+          <div class="flex flex-wrap gap-2 mb-2" data-settings="collaborators-list"></div>
+          <div class="flex gap-2">
+            <input type="text" class="flex-1 p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent" placeholder="Add collaborator (name or email)" data-settings="collab-input" />
+            <button class="px-3 py-1 glass rounded border border-cyan-400/20 text-cyan-200 hover:border-cyan-300 text-xs" data-settings="add-collab">Add</button>
+          </div>
+        </div>
+        <div class="mb-6">
+          <label class="block text-cyan-200 font-semibold mb-2">Integrity Layer</label>
+          <div class="mb-2 text-cyan-100/80 text-sm">Funders & Sources:</div>
+          <ul class="list-disc list-inside text-cyan-100/90 mb-2" data-settings="funders-list"></ul>
+          <div class="flex gap-2">
+            <input type="text" class="flex-1 p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent" placeholder="Add funder/source" data-settings="funder-input" />
+            <button class="px-3 py-1 glass rounded border border-cyan-400/20 text-cyan-200 hover:border-cyan-300 text-xs" data-settings="add-funder">Add</button>
+          </div>
+        </div>
+        <div class="mb-6">
+          <label class="block text-cyan-200 font-semibold mb-2">Visibility</label>
+          <select class="p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent" data-settings="visibility">
+            <option value="public">Public</option>
+            <option value="collaborators">Collaborators Only</option>
+            <option value="private">Private</option>
+          </select>
+        </div>
+        <div class="mb-6">
+          <label class="block text-cyan-200 font-semibold mb-2">Archive/Withdraw</label>
+          <button class="px-4 py-2 glass rounded border border-red-400/30 text-red-300 hover:border-red-300 text-sm" data-settings="archive">Archive Experiment</button>
+          <button class="ml-2 px-4 py-2 glass rounded border border-yellow-400/30 text-yellow-300 hover:border-yellow-300 text-sm" data-settings="withdraw">Withdraw Experiment</button>
+        </div>
+        <div class="text-right">
+          <button class="px-6 py-3 glass holo-glow rounded-lg border border-cyan-400/30 hover:border-cyan-300 transition" data-settings="save">Save Settings</button>
+        </div>
+      </div>
+    </template>
+    <div id="experiment-settings-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(10,20,40,0.85); z-index:1000; align-items:center; justify-content:center;">
+      <div id="experiment-settings-content"></div>
+    </div>
+    <script>
+      // --- Experiment Settings Logic (demo, not persistent) ---
+      // Example experiment data
+      let experimentSettingsData = {
+        title: "Rapid mRNA Vaccine Prototyping",
+        versions: [
+          { version: "v1.0", date: "2024-01-10", forkedFrom: null },
+          { version: "v1.1", date: "2024-03-02", forkedFrom: "v1.0" }
+        ],
+        currentVersion: "v1.1",
+        forkedFrom: "v1.0",
+        collaborators: ["Dr. Jane Doe", "Dr. Alan Turing"],
+        funders: ["Open Science Foundation", "NIH Grant #12345"],
+        visibility: "public",
+        archived: false,
+        withdrawn: false
+      };
+
+      function openExperimentSettings(expData = experimentSettingsData) {
+        const modal = document.getElementById('experiment-settings-modal');
+        const content = document.getElementById('experiment-settings-content');
+        const tpl = document.getElementById('experiment-settings-template');
+        content.innerHTML = '';
+        const node = document.importNode(tpl.content, true);
+        // Title
+        node.querySelector('[data-settings="title"]').value = expData.title;
+        // Versions
+        const versionSel = node.querySelector('[data-settings="version"]');
+        expData.versions.forEach(v => {
+          const opt = document.createElement('option');
+          opt.value = v.version;
+          opt.textContent = `${v.version} (${v.date})`;
+          versionSel.appendChild(opt);
+        });
+        versionSel.value = expData.currentVersion;
+        // Forked from
+        const forkedFrom = expData.versions.find(v => v.version === expData.currentVersion)?.forkedFrom;
+        node.querySelector('[data-settings="forked-from"]').textContent = forkedFrom ? `Forked from ${forkedFrom}` : "";
+        // Fork button
+        node.querySelector('[data-settings="fork"]').onclick = () => {
+          const newVer = prompt("Enter new version label (e.g. v1.2):", "");
+          if (newVer) {
+            expData.versions.push({ version: newVer, date: new Date().toISOString().slice(0,10), forkedFrom: expData.currentVersion });
+            expData.currentVersion = newVer;
+            openExperimentSettings(expData);
+          }
+        };
+        // Collaborators
+        const collabList = node.querySelector('[data-settings="collaborators-list"]');
+        function renderCollabs() {
+          collabList.innerHTML = '';
+          expData.collaborators.forEach((c, i) => {
+            const span = document.createElement('span');
+            span.className = "inline-flex items-center px-2 py-1 rounded bg-cyan-900 text-cyan-100 text-xs font-semibold";
+            span.textContent = c;
+            const rm = document.createElement('button');
+            rm.className = "ml-2 text-red-400 hover:text-red-300 text-xs";
+            rm.innerHTML = '<i class="fas fa-times"></i>';
+            rm.onclick = () => { expData.collaborators.splice(i,1); renderCollabs(); };
+            span.appendChild(rm);
+            collabList.appendChild(span);
+          });
+        }
+        renderCollabs();
+        node.querySelector('[data-settings="add-collab"]').onclick = () => {
+          const input = node.querySelector('[data-settings="collab-input"]');
+          const val = input.value.trim();
+          if (val && !expData.collaborators.includes(val)) {
+            expData.collaborators.push(val);
+            input.value = '';
+            renderCollabs();
+          }
+        };
+        // Funders
+        const fundersList = node.querySelector('[data-settings="funders-list"]');
+        function renderFunders() {
+          fundersList.innerHTML = '';
+          expData.funders.forEach((f, i) => {
+            const li = document.createElement('li');
+            li.textContent = f;
+            const rm = document.createElement('button');
+            rm.className = "ml-2 text-red-400 hover:text-red-300 text-xs";
+            rm.innerHTML = '<i class="fas fa-times"></i>';
+            rm.onclick = () => { expData.funders.splice(i,1); renderFunders(); };
+            li.appendChild(rm);
+            fundersList.appendChild(li);
+          });
+        }
+        renderFunders();
+        node.querySelector('[data-settings="add-funder"]').onclick = () => {
+          const input = node.querySelector('[data-settings="funder-input"]');
+          const val = input.value.trim();
+          if (val && !expData.funders.includes(val)) {
+            expData.funders.push(val);
+            input.value = '';
+            renderFunders();
+          }
+        };
+        // Visibility
+        node.querySelector('[data-settings="visibility"]').value = expData.visibility;
+        // Archive/Withdraw
+        node.querySelector('[data-settings="archive"]').onclick = () => {
+          if (confirm("Archive this experiment?")) { expData.archived = true; modal.style.display = "none"; }
+        };
+        node.querySelector('[data-settings="withdraw"]').onclick = () => {
+          if (confirm("Withdraw this experiment?")) { expData.withdrawn = true; modal.style.display = "none"; }
+        };
+        // Save
+        node.querySelector('[data-settings="save"]').onclick = () => {
+          expData.title = node.querySelector('[data-settings="title"]').value;
+          expData.currentVersion = node.querySelector('[data-settings="version"]').value;
+          expData.visibility = node.querySelector('[data-settings="visibility"]').value;
+          // Save logic would go here
+          modal.style.display = "none";
+        };
+        content.appendChild(node);
+        modal.style.display = "flex";
+        // Close on background click
+        modal.onclick = e => { if (e.target === modal) modal.style.display = "none"; };
+      }
+
+      // Example: attach to all "View Experiment" buttons in the discovery feed
+      document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(() => {
+          document.querySelectorAll('#discovery-feed-list button').forEach(btn => {
+            btn.onclick = () => openExperimentSettings();
+          });
+        }, 500);
+      });
+      
+    </script>
+    <!--
+The experiment settings interface is defined as a <template> and a hidden <div> modal.
+Nothing will show up by default unless you call openExperimentSettings() in your script.
+You need to trigger openExperimentSettings() (e.g. from a button click or on page load) to display the modal.
+-->

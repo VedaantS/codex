@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Futuristic Blueprint UI 2030</title>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+  <script src="https://kit.fontawesome.com/dac0a9835a.js" crossorigin="anonymous"></script>
+  <style>
+    body { font-family: 'Space Grotesk', sans-serif; }
+    .stroke-line { stroke: rgba(0,255,255,0.15); stroke-width: 0.5px; }
+    .glass { backdrop-filter: blur(14px) saturate(180%); background: rgba(10, 10, 30, 0.06); }
+    .holo-glow { box-shadow: 0 0 0.5px rgba(0,255,255,0.6), 0 0 8px rgba(0,255,255,0.2), 0 0 40px rgba(0,255,255,0.05); transition: box-shadow 0.4s ease-in-out; }
+    .holo-glow:hover { box-shadow: 0 0 1px rgba(0,255,255,0.9), 0 0 12px rgba(0,255,255,0.4), 0 0 60px rgba(0,255,255,0.1); }
+    .scanlines::before { content: ""; position: absolute; inset: 0;
+      background-image: repeating-linear-gradient(to bottom, rgba(255,255,255,0.02) 0px, transparent 1px, transparent 4px);
+      pointer-events: none; z-index: 10;
+    }
+    .flow-container { background: rgba(0,0,0,0.4); border: 0.5px solid rgba(0,255,255,0.2); overflow: auto; position: relative; }
+    .flow-grid { background-image: repeating-linear-gradient(0deg, rgba(0,255,255,0.1) 1px, transparent 1px),
+                   repeating-linear-gradient(90deg, rgba(0,255,255,0.1) 1px, transparent 1px);
+                  background-size: 50px 50px; }
+    .node { min-width: 140px; min-height: 60px; padding: 14px; background: rgba(20,20,40,0.92); border: 1px solid rgba(0,255,255,0.3); border-radius: 10px; color: #ccf; cursor: pointer; position: absolute; user-select: none; box-shadow: 0 2px 12px 0 rgba(0,255,255,0.04); }
+    .node .font-bold { font-size: 1.1rem; }
+    .node.selected { border-color: cyan; }
+    .fullscreen-btn { position: absolute; top: 1rem; right: 1rem; z-index: 20; }
+    .drag-palette .node { position: relative; margin-bottom: 1rem; cursor: grab; }
+    .drag-palette { width: 200px; padding: 1rem; }
+        .editor, .preview { width: 100%; height: 300px; border: 0.5px solid rgba(0,255,255,0.3); border-radius: 8px; background: rgba(20,20,40,0.8); color: #ccf; padding: 1rem; }
+    .editor { resize: vertical; }
+    .preview { overflow: auto; }
+    .file-drop { border:2px dashed rgba(0,255,255,0.4); border-radius:8px; padding:2rem; text-align:center; background:rgba(10,10,20,0.4); cursor:pointer; }
+    .file-drop.dragover { background:rgba(10,10,30,0.6); }
+    .rating { display:flex; gap:.5rem; align-items:center; }
+    .rating input { accent-color:cyan; }
+    #experiment-sidebar { box-shadow: 2px 0 12px 0 rgba(0,255,255,0.04); }
+    #experiment-list button.active { background: rgba(0,255,255,0.08); color: #67e8f9; }
+    #milestone-node-canvas { min-height: 400px; min-width: 800px; }
+    #right-sidebar-placeholder { min-width: 260px; max-width: 320px; }
+    @media (max-width: 900px) {
+      #experiment-sidebar { display: none; }
+      main { margin-left: 0 !important; }
+    }
+  </style>
+  <!-- LeaderLine for arrows -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leader-line/1.0.7/leader-line.min.js"></script>
+</head>
+<body class="bg-black text-white antialiased overflow-x-hidden flex flex-col h-screen">
+  <div id="main-content-wrapper" style="flex:1; display:flex; flex-direction:row; min-height:100vh;">
+    <!-- Sidebar for Experiments -->
+    <aside id="experiment-sidebar" class="w-64 bg-[#101020] glass border-r border-cyan-500/10 h-screen fixed left-0 top-0 z-40 flex flex-col pt-12 transition-all duration-300" style="min-width:220px;">
+      <button id="collapse-sidebar-btn" class="absolute top-4 right-2 text-cyan-300 bg-transparent hover:bg-cyan-900/30 rounded p-1 z-50 focus:outline-none" title="Collapse sidebar">
+        <i class="fas fa-chevron-left"></i>
+      </button>
+      <div class="flex flex-col items-center mb-6 relative">
+        <span class="text-2xl font-bold tracking-wide text-cyan-300 mb-2">atlantis [codex]</span>
+        <div class="relative">
+          <div id="sidebar-menu-dropdown" class="absolute left-0 mt-2 w-40 glass rounded shadow-lg border border-cyan-400/10 py-2 hidden z-50">
+            <a href="/kdmap.html" class="block px-4 py-2 text-cyan-200 hover:bg-cyan-900/20 text-sm">Frontier</a>
+            <a href="/chat.html" class="block px-4 py-2 text-cyan-200 hover:bg-cyan-900/20 text-sm">Chat</a>
+            <a href="/profile.html" class="block px-4 py-2 text-cyan-200 hover:bg-cyan-900/20 text-sm">Profile</a>
+          </div>
+        </div>
+      </div>
+      <h2 class="text-cyan-200 text-lg font-bold px-6 mb-4">Your Experiments</h2>
+      <nav id="experiment-list" class="flex-1 overflow-y-auto px-2 space-y-1">
+        <!-- Populated by JS -->
+      </nav>
+      <!-- Quick Navigation Links (iframe context switch) -->
+      <ul id="quick-nav-links" class="flex flex-col gap-1 px-4 mt-2 mb-2 sidebar-collapsible">
+        <li><a href="#" class="text-cyan-200 hover:text-cyan-400 transition text-sm" data-iframe="/kdmap.html">Frontier</a></li>
+        <li><a href="#" class="text-cyan-200 hover:text-cyan-400 transition text-sm" data-iframe="/chat.html">Chat</a></li>
+        <li><a href="#" class="text-cyan-200 hover:text-cyan-400 transition text-sm" data-iframe="/labs.html">Explore</a></li> 
+        <li><a href="#" class="text-cyan-200 hover:text-cyan-400 transition text-sm" data-iframe="/profile.html">Profile</a></li>
+        
+      </ul>
+      <button id="create-project-btn" class="w-11/12 mx-auto my-4 px-4 py-2 glass holo-glow rounded border border-cyan-400/30 hover:border-cyan-300 transition text-cyan-200 text-sm flex items-center justify-center gap-2 sidebar-collapsible">
+        <i class="fas fa-plus"></i> Create New Project
+      </button>
+    </aside>
+    <!-- Main Content Area -->
+    <main id="main-content" class="flex-1 ml-64 relative min-h-screen flex flex-col transition-all duration-300">
+      <div class="flex-1 flex flex-col h-full">
+        <!-- Node-based Milestone View (hidden by default) -->
+        <section id="milestone-node-view" class="hidden mb-16">
+          <h2 class="text-2xl font-bold text-cyan-200 mb-4">Upcoming Milestones</h2>
+          <div id="milestone-node-canvas" class="relative w-full h-[400px] bg-[#0a0a1e] glass rounded-xl border border-cyan-500/10 overflow-auto"></div>
+        </section>
+        <!-- Experiment iframe panel (hidden by default) -->
+        <section id="experiment-panel" class="hidden flex-1 flex flex-col min-h-0">
+          <div class="flex flex-1 min-h-0">
+            <div class="flex-1 rounded-xl overflow-hidden border border-cyan-500/10 flex flex-col min-h-0">
+              <iframe id="experiment-iframe" src="" class="w-full h-full min-h-0 flex-1 bg-[#181830]" frameborder="0" style="display:block; min-height:0; height:100%;"></iframe>
+            </div>
+            <!-- Right sidebar (moved from experiment.html) -->
+            <div id="right-sidebar-placeholder" class="w-72 ml-6" style="display: none;"></div>
+          </div>
+        </section>
+        <!-- Global Discovery Feed below -->
+        <section id="global-discovery-feed" class="py-20 px-8 mx-auto relative z-10 max-w-6xl" style="display: none;">
+          <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg" style="z-index: -1;">
+            <defs>
+              <pattern id="grid-discovery" width="80" height="80" patternUnits="userSpaceOnUse">
+                <path d="M80 0 L0 0 0 80" class="stroke-line" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid-discovery)" />
+          </svg>
+          <h2 class="text-3xl font-bold text-cyan-200 mb-6">Global Discovery Feed</h2>
+          <p class="text-cyan-100/80 mb-8">AI-curated experiments in your area and suggested collaborators.</p>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="discovery-feed-list">
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+  <footer class="py-8 text-center glass relative z-10 border-t border-cyan-500/10 w-full">
+    <p class="text-sm text-cyan-200">&copy; 2025 Atlantis. All rights reserved.</p>
+  </footer>
+
+
+  <script>
+    // --- Global Discovery Feed Logic (API-connected & Personalized) ---
+    async function renderDiscoveryFeed() {
+      const list = document.getElementById('discovery-feed-list');
+      list.innerHTML = '<div class="text-cyan-200 text-center col-span-2">Loading personalized feed...</div>';
+      const token = localStorage.getItem('access_token');
+      if (!token) return;
+      // Fetch user profile for personalization
+      let userProfile = null;
+      try {
+        const userId = (function parseJwt(token) { try { return JSON.parse(atob(token.split('.')[1])).sub; } catch (e) { return null; } })(token);
+        if (userId) {
+          const profRes = await fetch(`/profiles/${userId}`, { headers: { 'Authorization': 'Bearer ' + token } });
+          if (profRes.ok) userProfile = await profRes.json();
+        }
+      } catch (e) {}
+      // Fetch all projects (for experiments)
+      let projects = [];
+      try {
+        const res = await fetch('/projects', { headers: { 'Authorization': 'Bearer ' + token } });
+        if (res.ok) projects = await res.json();
+      } catch (e) {}
+      // Fetch all experiments
+      let experiments = [];
+      try {
+        const res = await fetch('/experiments', { headers: { 'Authorization': 'Bearer ' + token } });
+        if (res.ok) experiments = await res.json();
+      } catch (e) {}
+      // Personalization: filter/sort by user expertise/interests if available
+      let tags = (userProfile && userProfile.expertise_tags) ? userProfile.expertise_tags.map(t => t.toLowerCase()) : [];
+      // Join projects and experiments by title/owner_id
+      let feedItems = projects.map(p => {
+        const exp = experiments.find(e => e.title === p.title && e.owner_id === p.owner_id);
+        return {
+          project: p,
+          experiment: exp,
+          score: (p.impact_score || 0) + (p.reproducibility_score || 0) + (p.difficulty_score || 0),
+        };
+      }).filter(item => {
+        if (!item.experiment) return false;
+        if (item.experiment.visibility !== 'public') return false;
+        return true;
+      });
+      // If user has tags, boost/sort by tag match in experiment/project title/desc
+      if (tags.length) {
+        feedItems.forEach(item => {
+          let text = (item.project.title + ' ' + (item.experiment.description || '')).toLowerCase();
+          item.tagScore = tags.reduce((acc, tag) => acc + (text.includes(tag) ? 1 : 0), 0);
+        });
+        feedItems.sort((a, b) => (b.tagScore - a.tagScore) || (b.score - a.score));
+      } else {
+        feedItems.sort((a, b) => (b.score - a.score));
+      }
+      // --- Batch fetch all unique author IDs and resolve names ---
+      const authorIds = Array.from(new Set(feedItems.map(item => (item.experiment && item.experiment.owner_id) || (item.project && item.project.owner_id)).filter(Boolean)));
+      const authorNameMap = {};
+      await Promise.all(authorIds.map(async (authorId) => {
+        try {
+          const res = await fetch(`/users/${authorId}`, { headers: { 'Authorization': 'Bearer ' + token } });
+          if (res.ok) {
+            const user = await res.json();
+            // Defensive: prefer full_name, fallback to username, fallback to empty string
+            authorNameMap[authorId] = (user.name && user.name.trim()) ? user.name : (user.username || '');
+          } else {
+            authorNameMap[authorId] = '';
+          }
+        } catch (e) {
+          authorNameMap[authorId] = '';
+        }
+      }));
+      // Helper to truncate and expand text
+      function createExpandableText(text, maxLen, className) {
+        if (!text || text.length <= maxLen) {
+          return `<span class="${className}">${text || ''}</span>`;
+        }
+        const short = text.slice(0, maxLen) + '...';
+        const id = 'exp-' + Math.random().toString(36).substr(2, 8);
+        return `
+          <span class="${className}" id="${id}-short">${short} <a href="#" class="text-cyan-300 underline" onclick="document.getElementById('${id}-short').style.display='none';document.getElementById('${id}-full').style.display='inline';return false;">Show more</a></span>
+          <span class="${className}" id="${id}-full" style="display:none;">${text} <a href="#" class="text-cyan-300 underline" onclick="document.getElementById('${id}-full').style.display='none';document.getElementById('${id}-short').style.display='inline';return false;">Show less</a></span>
+        `;
+      }
+      list.innerHTML = '';
+      if (!feedItems.length) {
+        list.innerHTML = '<div class="text-cyan-200 text-center col-span-2">No experiments found for your feed.</div>';
+        return;
+      }
+      for (const item of feedItems.slice(0, 12)) {
+        const div = document.createElement('div');
+        div.className = "glass rounded-2xl p-6 holo-glow scanlines flex flex-col gap-2";
+        // Get authorId (experiment owner)
+        let authorId = item.experiment && item.experiment.owner_id ? item.experiment.owner_id : (item.project ? item.project.owner_id : null);
+        // Get author name from authorNameMap (prefer 'name', fallback to previous logic)
+        console.log(authorNameMap);
+        let authorName = authorNameMap[authorId] || authorId || 'Unknown';
+        // Truncate description
+        const descHtml = createExpandableText(item.experiment && item.experiment.description ? item.experiment.description : '', 120, 'text-cyan-200 text-sm mb-1');
+        div.innerHTML = `
+          <div class="flex items-center gap-2 mb-1">
+            <span class="inline-block w-2 h-2 rounded-full mr-2" style="background:#4caf50"></span>
+            <span class="text-cyan-100 font-semibold text-lg">${item.project.title}</span>
+          </div>
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-cyan-300 text-xs">by</span>
+            <span class="font-semibold text-cyan-200 text-xs author-name">${authorName}</span>
+          </div>
+          <div>${descHtml}</div>
+          <div class="flex flex-wrap gap-2 text-xs mb-1">
+            ${(item.project.field ? `<span class='bg-cyan-900 px-2 py-1 rounded'>${item.project.field}</span>` : '')}
+          </div>
+          <div class="text-cyan-400 text-xs mb-1">Impact: <span class="font-bold">${item.project.impact_score !== null && item.project.impact_score !== undefined ? Number(item.project.impact_score).toFixed(2) : 'N/A'}</span> | Reproducibility: <span class="font-bold">${item.project.reproducibility_score !== null && item.project.reproducibility_score !== undefined ? Number(item.project.reproducibility_score).toFixed(2) : 'N/A'}</span> | Difficulty: <span class="font-bold">${item.project.difficulty_score !== null && item.project.difficulty_score !== undefined ? Number(item.project.difficulty_score).toFixed(2) : 'N/A'}</span></div>
+          <button class="mt-2 px-4 py-2 glass holo-glow rounded border border-cyan-400/30 hover:border-cyan-300 transition text-cyan-200 text-sm" onclick="window.location.href='experiment.html?project_id=${item.project.id}'">View Experiment</button>
+        `;
+        list.appendChild(div);
+      }
+    }
+    renderDiscoveryFeed();
+  </script>
+
+    <div class="h-32"></div>
+
+  <!-- Modal for New Project -->
+  <div id="projectModal" class="fixed inset-0 flex items-center justify-center bg-black/60 z-50 hidden">
+    <div class="bg-[#101020] glass rounded-2xl p-8 max-w-md w-full relative">
+      <button id="closeProjectModal" class="absolute top-4 right-4 text-cyan-300 text-2xl">&times;</button>
+      <h2 class="text-2xl font-bold text-cyan-200 mb-6 text-center">Create New Project</h2>
+      <form id="projectForm" class="flex flex-col gap-4">
+        <input type="text" id="projectTitle" placeholder="Project Title" required class="p-3 rounded bg-black/40 border border-cyan-400/20 text-cyan-100 focus:outline-none focus:border-cyan-300" />
+        <textarea id="projectDesc" placeholder="Project Description" rows="3" class="p-3 rounded bg-black/40 border border-cyan-400/20 text-cyan-100 focus:outline-none focus:border-cyan-300"></textarea>
+        <button type="submit" class="px-6 py-3 glass holo-glow rounded-lg border border-cyan-400/30 hover:border-cyan-300 transition font-semibold text-cyan-200">Create Project</button>
+      </form>
+      <div id="projectMsg" class="text-cyan-300 mt-4 text-center"></div>
+    </div>
+  </div>
+  <script>
+    // Modal logic for New Project
+    const projectModal = document.getElementById('projectModal');
+    const closeProjectModal = document.getElementById('closeProjectModal');
+    closeProjectModal.onclick = () => { projectModal.classList.add('hidden'); document.getElementById('projectMsg').innerText = ''; };
+    window.onclick = (e) => { if (e.target === projectModal) { projectModal.classList.add('hidden'); document.getElementById('projectMsg').innerText = ''; } };
+    // Project creation logic
+    document.getElementById('projectForm').onsubmit = async function(e) {
+      e.preventDefault();
+      const token = localStorage.getItem('access_token');
+      if (!token) { window.location.href = '/login'; return; }
+      const userId = (function parseJwt(token) { try { return JSON.parse(atob(token.split('.')[1])).sub; } catch (e) { return null; } })(token);
+      if (!userId) { window.location.href = '/login'; return; }
+      const title = document.getElementById('projectTitle').value;
+      const description = document.getElementById('projectDesc').value;
+      const res = await fetch('/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ owner_id: userId, title, description })
+      });
+      if (res.ok) {
+        document.getElementById('projectMsg').innerText = 'Project created!';
+        setTimeout(() => { projectModal.classList.add('hidden'); document.getElementById('projectMsg').innerText = ''; location.reload(); }, 1200);
+      } else {
+        document.getElementById('projectMsg').innerText = 'Error creating project.';
+      }
+    };
+  </script>
+
+  <!-- Modal for All Projects -->
+  <div id="allProjectsModal" class="fixed inset-0 flex items-center justify-center bg-black/60 z-50 hidden">
+    <div class="bg-[#101020] glass rounded-2xl p-8 max-w-2xl w-full relative">
+      <button id="closeAllProjectsModal" class="absolute top-4 right-4 text-cyan-300 text-2xl">&times;</button>
+      <h2 class="text-2xl font-bold text-cyan-200 mb-6 text-center">All Projects</h2>
+      <div id="allProjectsList" class="flex flex-col gap-4 max-h-[60vh] overflow-y-auto"></div>
+    </div>
+  </div>
+  <script>
+    // Show all projects modal when All Projects card is clicked
+    document.addEventListener('DOMContentLoaded', function() {
+      var cards = document.querySelectorAll('.glass');
+      cards.forEach(function(card) {
+        var label = card.querySelector('span');
+        if (label && /all projects/i.test(label.textContent)) {
+          card.style.cursor = 'pointer';
+          card.addEventListener('click', function() {
+            showAllProjectsModal();
+          });
+        }
+      });
+      document.getElementById('closeAllProjectsModal').onclick = function() {
+        document.getElementById('allProjectsModal').classList.add('hidden');
+      };
+      window.onclick = function(e) {
+        if (e.target === document.getElementById('allProjectsModal')) {
+          document.getElementById('allProjectsModal').classList.add('hidden');
+        }
+      };
+    });
+    async function showAllProjectsModal() {
+      const token = localStorage.getItem('access_token');
+      if (!token) return;
+      const userId = (function parseJwt(token) { try { return JSON.parse(atob(token.split('.')[1])).sub; } catch (e) { return null; } })(token);
+      if (!userId) return;
+      const res = await fetch('/projects', { headers: { 'Authorization': 'Bearer ' + token } });
+      if (!res.ok) return;
+      const projects = await res.json();
+      const myProjects = projects.filter(function(p) { return p.owner_id === userId; });
+      const list = document.getElementById('allProjectsList');
+      list.innerHTML = '';
+      if (!myProjects.length) {
+        list.innerHTML = '<div class="text-cyan-200 text-center">No projects found.</div>';
+      } else {
+        myProjects.forEach(function(p) {
+          var div = document.createElement('div');
+          div.className = 'glass p-4 rounded-lg flex flex-col gap-1 border border-cyan-400/10 hover:bg-cyan-900/10 cursor-pointer';
+          div.innerHTML = '<div class="text-lg font-semibold text-cyan-100">' + (p.title || 'Untitled Project') + '</div>' +
+            (p.description ? '<div class="text-cyan-200 text-sm">' + p.description + '</div>' : '') +
+            '<div class="text-xs text-cyan-400">Created: ' + (p.created_at ? new Date(p.created_at).toLocaleString() : '-') + '</div>';
+          div.onclick = function() {
+            window.location.href = '/experiment.html?project_id=' + encodeURIComponent(p.id);
+          };
+          list.appendChild(div);
+        });
+      }
+      document.getElementById('allProjectsModal').classList.remove('hidden');
+    }
+  </script>
+
+  <script>
+    // Fetch and display most recent project for the user
+    async function showMostRecentProject() {
+      const token = localStorage.getItem('access_token');
+      if (!token) return;
+      const userId = (function parseJwt(token) { try { return JSON.parse(atob(token.split('.')[1])).sub; } catch (e) { return null; } })(token);
+      if (!userId) return;
+      const res = await fetch('/projects', { headers: { 'Authorization': 'Bearer ' + token } });
+      if (!res.ok) return;
+      const projects = await res.json();
+      // Filter to only this user's projects
+      const myProjects = projects.filter(function(p) { return p.owner_id === userId; });
+      if (!myProjects.length) return;
+      // Sort by updated_at or created_at descending (handle nulls)
+      myProjects.sort(function(a, b) {
+        var aTime = a.updated_at || a.created_at || '';
+        var bTime = b.updated_at || b.created_at || '';
+        return bTime.localeCompare(aTime);
+      });
+      var mostRecent = myProjects[0];
+      // Find the dashboard card for 'Most Recent Project' (by label)
+      var cards = document.querySelectorAll('.glass');
+      var found = false;
+      cards.forEach(function(card) {
+        var label = card.querySelector('span');
+        if (label && /recent project/i.test(label.textContent)) {
+          label.textContent = 'Most Recent Project';
+          var value = card.querySelector('.text-center');
+          if (value) value.textContent = mostRecent.title;
+          // Make card clickable to go to experiment.html?project_id=...
+          card.style.cursor = 'pointer';
+          card.onclick = function() {
+            window.location.href = '/experiment.html?project_id=' + encodeURIComponent(mostRecent.id);
+          };
+          found = true;
+        }
+      });
+      if (!found) {
+        // fallback: find the card with 'Constitutional AI and its Limits'
+        cards.forEach(function(card) {
+          var value = card.querySelector('.text-center');
+          if (value && /None/i.test(value.textContent)) {
+            var label = card.querySelector('span');
+            if (label) label.textContent = 'Most Recent Project';
+            value.textContent = mostRecent.title;
+            card.style.cursor = 'pointer';
+            card.onclick = function() {
+              window.location.href = '/experiment.html?project_id=' + encodeURIComponent(mostRecent.id);
+            };
+          }
+        });
+      }
+    }
+    window.addEventListener('DOMContentLoaded', showMostRecentProject);
+    // Fetch and display all projects count for the user
+    async function showAllProjectsCount() {
+      const token = localStorage.getItem('access_token');
+      if (!token) return;
+      const userId = (function parseJwt(token) { try { return JSON.parse(atob(token.split('.')[1])).sub; } catch (e) { return null; } })(token);
+      if (!userId) return;
+      const res = await fetch('/projects', { headers: { 'Authorization': 'Bearer ' + token } });
+      if (!res.ok) return;
+      const projects = await res.json();
+      // Filter to only this user's projects
+      const myProjects = projects.filter(function(p) { return p.owner_id === userId; });
+      // Find the dashboard card for 'All Projects' (by label)
+      var cards = document.querySelectorAll('.glass');
+      cards.forEach(function(card) {
+        var label = card.querySelector('span');
+        if (label && /all projects/i.test(label.textContent)) {
+          var value = card.querySelector('.text-center');
+          if (value) value.textContent = myProjects.length + ' project' + (myProjects.length === 1 ? '' : 's');
+        }
+      });
+    }
+    window.addEventListener('DOMContentLoaded', showAllProjectsCount);
+  </script>
+
+
+  <!-- Remove Suggested Grants Section from homepage -->
+  <!-- (Section with id="suggested-grants" and related script removed) -->
+
+  <pre id="dashboard-debug-steps" style="display:none;"></pre>
+  <div id="dashboard-debug-panel" style="display:none;"></div>
+
+  <script>
+    // --- Populate Sidebar with User Experiments ---
+    async function populateExperimentSidebar() {
+      const token = localStorage.getItem('access_token');
+      if (!token) return;
+      const userId = (function parseJwt(token) { try { return JSON.parse(atob(token.split('.')[1])).sub; } catch (e) { return null; } })(token);
+      if (!userId) return;
+      const res = await fetch('/projects', { headers: { 'Authorization': 'Bearer ' + token } });
+      if (!res.ok) return;
+      const projects = await res.json();
+      // Fetch all milestones for all projects
+      let milestonesByProject = {};
+      await Promise.all(projects.map(async p => {
+        try {
+          const resExp = await fetch(`/projects/${encodeURIComponent(p.id)}/experiment`, { headers: { 'Authorization': 'Bearer ' + token } });
+          let experimentId = p.id;
+          if (resExp.ok) {
+            const expData = await resExp.json();
+            if (expData && expData.id) experimentId = expData.id;
+          }
+          const resVers = await fetch(`/experiments/${encodeURIComponent(experimentId)}/versions`, { headers: { 'Authorization': 'Bearer ' + token } });
+          if (!resVers.ok) return;
+          const versions = await resVers.json();
+          if (!versions.length) return;
+          const latest = versions.reduce((a, b) => new Date(a.created_at) > new Date(b.created_at) ? a : b);
+          const resSteps = await fetch(`/versions/${encodeURIComponent(latest.id)}/steps`, { headers: { 'Authorization': 'Bearer ' + token } });
+          if (!resSteps.ok) return;
+          const steps = await resSteps.json();
+          milestonesByProject[p.id] = steps;
+        } catch (e) {}
+      }));
+      // Filter to only this user's projects
+      let myProjects = projects.filter(p => p.owner_id === userId);
+      // Sort: upcoming milestone projects first, then by most recent (updated_at/created_at)
+      const now = new Date();
+      myProjects.forEach(p => {
+        const steps = milestonesByProject[p.id] || [];
+        // Find soonest milestone in the future
+        let soonest = null;
+        for (const s of steps) {
+          if (s.due_date) {
+            const due = new Date(s.due_date);
+            if (due > now && (!soonest || due < soonest)) soonest = due;
+          }
+        }
+        p._upcomingMilestone = soonest;
+      });
+      myProjects.sort((a, b) => {
+        // 1. Projects with upcoming milestone come first, sorted by soonest
+        if (a._upcomingMilestone && b._upcomingMilestone) {
+          return a._upcomingMilestone - b._upcomingMilestone;
+        } else if (a._upcomingMilestone) {
+          return -1;
+        } else if (b._upcomingMilestone) {
+          return 1;
+        }
+        // 2. Otherwise, sort by most recent updated_at/created_at
+        const aTime = a.updated_at || a.created_at || '';
+        const bTime = b.updated_at || b.created_at || '';
+        return bTime.localeCompare(aTime);
+      });
+      const list = document.getElementById('experiment-list');
+      list.innerHTML = '';
+      if (!myProjects.length) {
+        list.innerHTML = '<div class="text-cyan-400 text-sm px-4 py-2">No experiments found.</div>';
+        return;
+      }
+      myProjects.forEach(p => {
+        const btn = document.createElement('button');
+        btn.className = 'w-full text-left px-4 py-2 rounded hover:bg-cyan-900/20 text-cyan-100 transition font-medium';
+        // Project name span
+        let label = p.title || 'Untitled Experiment';
+        if (p._upcomingMilestone) {
+          label += ' ';
+          label += '<span style="font-size:0.85em;color:#fb923c;font-weight:600;">upcoming milestone</span>';
+        }
+        btn.innerHTML = label;
+        btn.onclick = () => openExperimentPanel(p.id);
+        list.appendChild(btn);
+      });
+    }
+    // --- Open experiment.html in side panel ---
+    function openExperimentPanel(projectId) {
+      document.getElementById('experiment-panel').classList.remove('hidden');
+      document.getElementById('milestone-node-view').classList.add('hidden');
+      document.getElementById('experiment-iframe').src = '/experiment.html?project_id=' + encodeURIComponent(projectId);
+      // Move right sidebar from experiment.html if needed (placeholder for now)
+      document.getElementById('right-sidebar-placeholder').innerHTML = '<div class="glass rounded-xl p-4 mt-2 text-cyan-200">Sidebar from experiment.html here</div>';
+    }
+    // --- Node-based Milestone View ---
+    async function showMilestoneNodeView() {
+      document.getElementById('milestone-node-view').classList.remove('hidden');
+      document.getElementById('experiment-panel').classList.add('hidden');
+      const canvas = document.getElementById('milestone-node-canvas');
+      canvas.innerHTML = '';
+      // Fetch all steps for user (reuse logic from dashboard)
+      const token = localStorage.getItem('access_token');
+      if (!token) return;
+      const userId = (function parseJwt(token) { try { return JSON.parse(atob(token.split('.')[1])).sub; } catch (e) { return null; } })(token);
+      if (!userId) return;
+      const resProj = await fetch('/projects', { headers: { 'Authorization': 'Bearer ' + token } });
+      if (!resProj.ok) return;
+      const projects = await resProj.json();
+      // For each project, fetch steps (milestones)
+      let y = 40;
+      let nodeMap = {};
+      for (const p of projects.filter(p => p.owner_id === userId)) {
+        const resExp = await fetch(`/projects/${encodeURIComponent(p.id)}/experiment`, { headers: { 'Authorization': 'Bearer ' + token } });
+        let experimentId = p.id;
+        if (resExp.ok) {
+          const expData = await resExp.json();
+          if (expData && expData.id) experimentId = expData.id;
+        }
+        const resVers = await fetch(`/experiments/${encodeURIComponent(experimentId)}/versions`, { headers: { 'Authorization': 'Bearer ' + token } });
+        if (!resVers.ok) continue;
+        const versions = await resVers.json();
+        if (!versions.length) continue;
+        const latest = versions.reduce((a, b) => new Date(a.created_at) > new Date(b.created_at) ? a : b);
+        const resSteps = await fetch(`/versions/${encodeURIComponent(latest.id)}/steps`, { headers: { 'Authorization': 'Bearer ' + token } });
+        if (!resSteps.ok) continue;
+        const steps = await resSteps.json();
+        let x = 40;
+        let prevNodeId = null;
+        steps.forEach((s, idx) => {
+          const nodeId = `node-${p.id}-${s.id}`;
+          const nodeDiv = document.createElement('div');
+          nodeDiv.className = 'node glass absolute';
+          nodeDiv.style.left = `${x}px`;
+          nodeDiv.style.top = `${y}px`;
+          nodeDiv.innerHTML = `<div class='font-bold text-cyan-100'>${s.title || s.name || 'Step'}</div><div class='text-xs text-cyan-400'>${s.due_date ? 'Due: ' + new Date(s.due_date).toLocaleDateString() : ''}</div>`;
+          nodeDiv.id = nodeId;
+          canvas.appendChild(nodeDiv);
+          nodeMap[nodeId] = nodeDiv;
+          if (prevNodeId) {
+            // Draw arrow using LeaderLine
+            setTimeout(() => {
+              new LeaderLine(
+                document.getElementById(prevNodeId),
+                nodeDiv,
+                { color: 'cyan', size: 2, path: 'straight', startPlug: 'disc', endPlug: 'arrow3' }
+              );
+            }, 0);
+          }
+          prevNodeId = nodeId;
+          x += 220;
+        });
+        y += 120;
+      }
+    }
+    // --- Hook up sidebar and milestone click ---
+    document.addEventListener('DOMContentLoaded', function() {
+      populateExperimentSidebar();
+      // Replace upcoming milestones click handler
+      const upcomingMilestonesPanel = Array.from(document.querySelectorAll('.glass')).find(card => {
+        const label = card.querySelector('span');
+        return label && /upcoming milestones/i.test(label.textContent);
+      });
+      if (upcomingMilestonesPanel) {
+        upcomingMilestonesPanel.style.cursor = 'pointer';
+        upcomingMilestonesPanel.onclick = showMilestoneNodeView;
+      }
+      // Create new project button logic
+      const createBtn = document.getElementById('create-project-btn');
+      if (createBtn) {
+        createBtn.addEventListener('click', function() {
+          document.getElementById('projectModal').classList.remove('hidden');
+        });
+      }
+      // Quick nav links: change iframe context
+      const quickNav = document.getElementById('quick-nav-links');
+      if (quickNav) {
+        quickNav.querySelectorAll('a[data-iframe]').forEach(link => {
+          link.addEventListener('click', function(e) {
+            e.preventDefault();
+            // Show the experiment panel if not visible
+            document.getElementById('experiment-panel').classList.remove('hidden');
+            document.getElementById('milestone-node-view').classList.add('hidden');
+            document.getElementById('experiment-iframe').src = this.getAttribute('data-iframe');
+            // Optionally clear right sidebar placeholder
+            document.getElementById('right-sidebar-placeholder').innerHTML = '';
+          });
+        });
+      }
+    });
+  </script>
+
+  <script>
+    // Sidebar collapse/expand logic
+    (function() {
+      const sidebar = document.getElementById('experiment-sidebar');
+      const collapseBtn = document.getElementById('collapse-sidebar-btn');
+      const mainContent = document.getElementById('main-content');
+      let collapsed = false;
+      function setSidebarCollapsed(isCollapsed) {
+        collapsed = isCollapsed;
+        if (collapsed) {
+          sidebar.style.width = '56px';
+          sidebar.style.minWidth = '56px';
+          sidebar.classList.add('collapsed');
+          // Hide text labels, show only icons
+          sidebar.querySelectorAll('span, h2, nav, .relative:not(:first-child), .sidebar-collapsible').forEach(el => el.style.display = 'none');
+          collapseBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
+          collapseBtn.title = 'Expand sidebar';
+          // Remove left margin from main content so iframe fills space
+          mainContent.style.marginLeft = '56px';
+        } else {
+          sidebar.style.width = '';
+          sidebar.style.minWidth = '220px';
+          sidebar.classList.remove('collapsed');
+          sidebar.querySelectorAll('span, h2, nav, .relative:not(:first-child), .sidebar-collapsible').forEach(el => el.style.display = '');
+          collapseBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
+          collapseBtn.title = 'Collapse sidebar';
+          mainContent.style.marginLeft = '16rem'; // 64 * 0.25rem = 16rem (Tailwind's ml-64)
+        }
+      }
+      collapseBtn.addEventListener('click', function(e) {
+        setSidebarCollapsed(!collapsed);
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login | Atlantis [CODEX]</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+  <script src="https://kit.fontawesome.com/dac0a9835a.js" crossorigin="anonymous"></script>
+  <style>
+    body { font-family: 'Space Grotesk', sans-serif; }
+    .glass { backdrop-filter: blur(14px) saturate(180%); background: rgba(10, 10, 30, 0.06); }
+    .holo-glow { box-shadow: 0 0 0.5px rgba(0,255,255,0.6), 0 0 8px rgba(0,255,255,0.2), 0 0 40px rgba(0,255,255,0.05); transition: box-shadow 0.4s ease-in-out; }
+    .holo-glow:hover { box-shadow: 0 0 1px rgba(0,255,255,0.9), 0 0 12px rgba(0,255,255,0.4), 0 0 60px rgba(0,255,255,0.1); }
+    .scanlines::before { content: ""; position: absolute; inset: 0;
+      background-image: repeating-linear-gradient(to bottom, rgba(255,255,255,0.02) 0px, transparent 1px, transparent 4px);
+      pointer-events: none; z-index: 10;
+    }
+  </style>
+</head>
+<body class="bg-black text-white antialiased min-h-screen flex items-center justify-center">
+  <nav class="fixed top-0 w-full flex justify-between items-center px-10 py-4 glass border-b border-cyan-500/10 z-50" style="z-index: 11;">
+    <a href="/" class="text-2xl font-bold tracking-wide text-cyan-300">atlantis [CODEX]</a>
+    <ul class="flex space-x-8 text-sm">
+      <li><a href="#" class="hover:text-cyan-400 transition">Home</a></li>
+      <li><a href="/kdmap.html" class="hover:text-cyan-400 transition">Frontier</a></li>
+      <li><a href="/chat.html" class="hover:text-cyan-400 transition">Chat</a></li>
+      <li><a href="/profile.html" class="hover:text-cyan-400 transition">Profile</a></li>
+    </ul>
+  </nav>
+  <div class="w-full flex justify-center items-center min-h-screen">
+    <div class="glass rounded-2xl p-8 holo-glow scanlines max-w-md mx-auto my-12 relative z-10 mt-32">
+      <h2 class="text-2xl font-bold text-cyan-200 mb-6 text-center">Login</h2>
+      <form id="loginForm" class="flex flex-col gap-4">
+        <input type="email" id="email" placeholder="Email" required class="p-3 rounded bg-black/40 border border-cyan-400/20 text-cyan-100 focus:outline-none focus:border-cyan-300" />
+        <input type="password" id="password" placeholder="Password" required class="p-3 rounded bg-black/40 border border-cyan-400/20 text-cyan-100 focus:outline-none focus:border-cyan-300" />
+        <button type="submit" class="px-6 py-3 glass holo-glow rounded-lg border border-cyan-400/30 hover:border-cyan-300 transition font-semibold text-cyan-200">Login</button>
+      </form>
+      <div id="loginError" class="text-red-400 mt-4 text-center"></div>
+      <div class="mt-4 text-center text-cyan-100/80 text-sm">Don't have an account? <a href="/register" class="text-cyan-300 hover:underline">Register</a></div>
+    </div>
+  </div>
+  <script>
+    document.getElementById('loginForm').onsubmit = async function(e) {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const res = await fetch('/auth/login', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({email, password})
+      });
+      if (res.ok) {
+        const data = await res.json();
+        localStorage.setItem('access_token', data.access_token);
+        // Fetch user info to determine role
+        const userRes = await fetch('/users/' + parseJwt(data.access_token).sub, {
+          headers: { 'Authorization': 'Bearer ' + data.access_token }
+        });
+        if (userRes.ok) {
+          const user = await userRes.json();
+          if (user.role === 'funder') {
+            window.location.href = '/funder-homepage.html';
+          } else {
+            window.location.href = '/scientist-homepage.html';
+          }
+        } else {
+          window.location.href = '/scientist-homepage.html'; // fallback
+        }
+      } else {
+        document.getElementById('loginError').innerText = 'Invalid credentials.';
+      }
+    };
+    // Helper to decode JWT
+    function parseJwt(token) {
+      try {
+        return JSON.parse(atob(token.split('.')[1]));
+      } catch (e) { return {}; }
+    }
+  </script>
+</body>
+</html>

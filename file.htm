@@ -1,0 +1,1736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Futuristic Blueprint UI 2030</title>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+  <script src="https://kit.fontawesome.com/dac0a9835a.js" crossorigin="anonymous"></script>
+  <style>
+    body { font-family: 'Space Grotesk', sans-serif; }
+    .stroke-line { stroke: rgba(0,255,255,0.15); stroke-width: 0.5px; }
+    .glass { backdrop-filter: blur(14px) saturate(180%); background: rgba(10, 10, 30, 0.06); }
+    .holo-glow { box-shadow: 0 0 0.5px #33b5e5aa, 0 0 8px rgba(0,255,255,0.2), 0 0 40px rgba(0,255,255,0.05); transition: box-shadow 0.4s ease-in-out; }
+    .holo-glow:hover { box-shadow: 0 0 1px #33b5e5aa, 0 0 12px rgba(0,255,255,0.4), 0 0 60px rgba(0,255,255,0.1); }
+    .scanlines::before { content: ""; position: absolute; inset: 0;
+      background-image: repeating-linear-gradient(to bottom, rgba(255,255,255,0.02) 0px, transparent 1px, transparent 4px);
+      pointer-events: none; z-index: 10;
+    }
+    .flow-container { background: rgba(0,0,0,0.4); border: 0.5px solid rgba(0,255,255,0.2); overflow: auto; position: relative; }
+    .flow-grid { background-image: repeating-linear-gradient(0deg, rgba(0,255,255,0.1) 1px, transparent 1px),
+                   repeating-linear-gradient(90deg, rgba(0,255,255,0.1) 1px, transparent 1px);
+                  background-size: 50px 50px; }
+    .node { min-width: 120px; padding: 12px; background: rgba(20,20,40,0.8); border: 0.5px solid rgba(0,255,255,0.3); border-radius: 8px; color: #fff; cursor: grab; position: absolute; user-select: none; }
+    .node.selected { border-color: cyan; }
+    .fullscreen-btn { position: absolute; top: 1rem; right: 1rem; z-index: 20; }
+    .drag-palette .node { position: relative; margin-bottom: 1rem; cursor: grab; }
+    .drag-palette { width: 200px; padding: 1rem; }
+        .editor, .preview { width: 100%; height: 300px; border: 0.5px solid rgba(0,255,255,0.3); border-radius: 8px; background: rgba(20,20,40,0.8); color: #fff; padding: 1rem; }
+    .editor { resize: vertical; }
+    .preview { overflow: auto; }
+    .file-drop { border:2px dashed rgba(0,255,255,0.4); border-radius:8px; padding:2rem; text-align:center; background:rgba(10,10,20,0.4); cursor:pointer; }
+    .file-drop.dragover { background:rgba(10,10,30,0.6); }
+    .rating { display:flex; gap:.5rem; align-items:center; }
+    .rating input { accent-color:cyan; }
+
+  </style>
+  <!-- LeaderLine for arrows -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leader-line/1.0.7/leader-line.min.js"></script>
+</head>
+<body class="bg-black text-white antialiased overflow-x-hidden">
+
+    <nav class="fixed top-0 w-full flex justify-between items-center px-10 py-4 glass border-b border-cyan-500/10 z-50" style="z-index: 100;>
+    <div class="text-2xl font-bold tracking-wide text-cyan-300">atlantis [CODEX]</div>
+    <ul class="flex space-x-8 text-sm">
+      <li><a href="#" class="hover:text-cyan-400 transition">Home</a></li>
+      <li><a href="#features" class="hover:text-cyan-400 transition">Grant</a></li>
+      <li><a href="#dashboard" class="hover:text-cyan-400 transition">Frontier</a></li>
+      <li><a href="#contact" class="hover:text-cyan-400 transition">Publish</a></li>
+      <li><a href="#contact" class="hover:text-cyan-400 transition">Chat</a></li>
+    </ul>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="min-h-screen flex items-center justify-center relative">
+    <!-- Blueprint Grid -->
+    <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <pattern id="grid" width="80" height="80" patternUnits="userSpaceOnUse">
+          <path d="M80 0 L0 0 0 80" class="stroke-line" />
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#grid)" />
+    </svg>
+    <!-- Hero Card -->
+    <div class="glass p-16 rounded-3xl max-w-2xl z-10 holo-glow scanlines relative">
+      <h1 class="text-6xl font-extrabold mb-6 tracking-tight text-white">Welcome to Codex.</h1>
+      <p class="text-lg mb-6 leading-relaxed">
+      Technology is not neutral. It is a force multiplier. The question is not whether we build—but whether we build toward something worthy.
+      <br><br>We are not here to automate hedge funds, or optimize ad clicks, or disappear into digital theme parks. We are here to solve the hard problems. AI alignment. Nuclear risk. Neurodegeneration. Pandemic prevention. Energy abundance. National resilience. Civilizational trust.
+      <br><br>This is the politics of repair. The economics of purpose. The science of consequence.
+
+      </p>
+      <a href="#dashboard" class="inline-block px-10 py-4 border border-cyan-400/30 rounded-xl text-sm tracking-wider hover:border-cyan-300 transition">Explore Dashboard</a>
+    </div>
+    <svg class="absolute inset-0 w-full h-full pointer-events-none z-0 opacity-20 animate-spin-slow" viewBox="0 0 200 200">
+      <circle cx="100" cy="100" r="90" stroke="cyan" stroke-width="0.4" fill="none" stroke-dasharray="4 4" />
+    </svg>
+  </section>
+
+  <section id="dashboard" class="py-20 relative">
+    <!-- Dashboard Blueprint Grid -->
+    <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <pattern id="grid-db" width="80" height="80" patternUnits="userSpaceOnUse">
+          <path d="M80 0 L0 0 0 80" class="stroke-line" />
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#grid-db)" />
+    </svg>
+      <div class="text-center mb-12 relative z-10">
+      <h2 class="text-4xl font-bold text-white">Scientist Dashboard</h2>
+      <p class="text-cyan-100/80">Conduct research, get grants, drive the world forward.</p>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 max-w-7xl mx-auto relative z-10">
+      <!-- Panel Template -->
+      <template id="panel-template">
+        <div class="glass p-8 rounded-2xl h-72 relative holo-glow scanlines transform-gpu hover:scale-105 transition-all duration-300" style="border: 0.5px solid rgba(0,255,255,0.2)">
+          <div class="relative h-full flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+              <i class="fas fa-wave-square text-4xl text-cyan-300"></i>
+              <span class="text-sm uppercase text-white tracking-widest">Waveform</span>
+            </div>
+            <div class="text-center text-3xl font-bold text-cyan-100">72%</div>
+          </div>
+        </div>
+      </template>
+      <script>
+        const container = document.querySelector('#dashboard .grid');
+        const icons = ['fa-pen-to-square','fa-archive','fa-plus','fa-flag','fa-chart-line','fa-rocket'];
+        const labels = ['Most Recent Project','All Projects','New Project','Upcoming Milestones','All Milestones','New Challenges'];
+        const values = ['Constitutional AI and its Limits','128 projects','64%','7','512','55 challenges recommended for you'];
+        icons.forEach((icon, i) => {
+          const node = document.importNode(document.getElementById('panel-template').content, true);
+          node.querySelector('i').classList.replace('fa-wave-square', icon);
+          node.querySelector('span').textContent = labels[i];
+          node.querySelector('.text-center').textContent = values[i];
+          container.appendChild(node);
+        });
+      </script>
+  </section>
+
+
+  <!-- Spacer -->
+  <div class="h-32"></div>
+
+  <!-- Funder Dashboard -->
+  <section id="funder-dashboard" class="py-20 relative">
+    <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+      <defs><pattern id="grid-fd" width="80" height="80" patternUnits="userSpaceOnUse"><path d="M80 0 L0 0 0 80" class="stroke-line" /></pattern></defs>
+      <rect width="100%" height="100%" fill="url(#grid-fd)" />
+    </svg>
+    <div class="text-center mb-12 relative z-10">
+      <h2 class="text-4xl font-bold text-white">Funder Dashboard</h2>
+      <p class="text-cyan-100/80">Manage grants, track budgets, and oversee project funding</p>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 max-w-7xl mx-auto relative z-10">
+      <!-- Panel Template -->
+      <template id="funder-panel-template">
+        <div class="glass p-8 rounded-2xl h-72 relative holo-glow scanlines transform-gpu hover:scale-105 transition-all duration-300" style="border: 0.5px solid rgba(0,255,255,0.2)">
+          <div class="relative h-full flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+              <i class="fas fa-gem text-4xl text-cyan-300"></i>
+              <span class="text-sm uppercase text-white tracking-widest">Label</span>
+            </div>
+            <div class="text-center text-3xl font-bold text-cyan-100">Value</div>
+          </div>
+        </div>
+      </template>
+      <script>
+        const fdContainer = document.querySelector('#funder-dashboard .grid');
+        const iconsFD = ['fa-handshake','fa-coins','fa-calendar-check','fa-tasks','fa-chart-pie','fa-user-check'];
+        const labelsFD = ['Grants Awarded','Budget Remaining','Pending Applications','Upcoming Reviews','Funding Allocation','Approved Institutions'];
+        const valuesFD = ['42','$1.2M','18','5 reviews','74%','23'];
+        iconsFD.forEach((icon, i) => {
+          const node = document.importNode(document.getElementById('funder-panel-template').content, true);
+          node.querySelector('i').classList.replace('fa-gem', icon);
+          node.querySelector('span').textContent = labelsFD[i];
+          node.querySelector('.text-center').textContent = valuesFD[i];
+          fdContainer.appendChild(node);
+        });
+      </script>
+  </section>
+
+
+  <div class="h-32"></div>
+  <section id="flowchart" class="relative py-20">
+    <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+      <defs><pattern id="grid-fc" width="80" height="80" patternUnits="userSpaceOnUse"><path d="M80 0 L0 0 0 80" class="stroke-line"/></pattern></defs>
+      <rect width="100%" height="100%" fill="url(#grid-fc)" />
+    </svg>
+    <div class="text-center mb-12 relative z-10">
+      <h2 class="text-4xl font-bold text-white">Experiment Hub</h2>
+      <p class="text-cyan-100/80">Drag steps in, click one node then another to draw multiple connections, double-click to rename.</p>
+    </div>
+    <div class="max-w-screen-xl mx-auto relative z-10 flex" style="height: 600px;">
+      <div class="drag-palette glass">
+        <h3 class="text-white mb-4">Flow Steps</h3>
+        <div class="node holo-glow" draggable="true" data-type="step">Step</div>
+        <div class="node holo-glow" draggable="true" data-type="decision">Decision</div>
+        <div class="node holo-glow" draggable="true" data-type="end">End</div>
+      </div>
+      <div id="flow-canvas" class="flow-container flow-grid flex-1 ml-8 relative" tabindex="0">
+        <button class="fullscreen-btn glass p-2 rounded holo-glow" onclick="toggleFullScreen()"><i class="fas fa-expand"></i></button>
+      </div>
+      <!-- Shoulder Stats Panel -->
+      <div id="shoulder-panel" style="position:absolute; right:0; top:0; height:100%; width:320px; background:rgba(10,20,40,0.95); border-left:1px solid rgba(0,255,255,0.15); box-shadow:-4px 0 24px 0 rgba(0,255,255,0.05); z-index:30; transition:opacity 0.3s cubic-bezier(.4,2,.6,1),visibility 0.3s cubic-bezier(.4,2,.6,1); padding:32px 24px 24px 24px; display:flex; flex-direction:column; gap:24px; opacity:0; visibility:hidden;">
+        <button id="close-shoulder" style="position:absolute; top:16px; left:-44px; background:rgba(0,255,255,0.12); border:none; border-radius:50%; width:36px; height:36px; color:cyan; font-size:20px; cursor:pointer; box-shadow:0 0 8px 0 rgba(0,255,255,0.2);"><i class="fas fa-times"></i></button>
+        <h3 style="color:cyan; font-size:1.3rem; font-weight:700; margin-bottom:8px;">Experiment Stats</h3>
+        <div style="display:flex; flex-direction:column; gap:12px; font-size:1.05rem;">
+          <div><span style="color:#7fffd4;">Reproducibility:</span> <span id="shoulder-repro">4.2</span></div>
+          <div><span style="color:#7fffd4;">Impact:</span> <span id="shoulder-impact">4.7</span></div>
+          <div><span style="color:#7fffd4;">Difficulty:</span> <span id="shoulder-diff">2.9</span></div>
+          <div><span style="color:#7fffd4;">Est. Budget:</span> <span id="shoulder-budget">$120,000</span></div>
+          <div><span style="color:#7fffd4;">Eligible Grants:</span> <span id="shoulder-grants">5</span></div>
+          <div><span style="color:#7fffd4;">Lead Scientist:</span> <span id="shoulder-lead">Dr. Smith</span></div>
+        </div>
+      </div>
+      <button id="open-shoulder" style="position:absolute; right:-44px; top:32px; background:rgba(0,255,255,0.12); border:none; border-radius:50%; width:36px; height:36px; color:cyan; font-size:20px; cursor:pointer; box-shadow:0 0 8px 0 rgba(0,255,255,0.2); z-index:31;"><i class="fas fa-chart-bar"></i></button>
+    </div>
+  </section>
+  <script>
+    const paletteItems = document.querySelectorAll('.drag-palette .node');
+    const canvas = document.getElementById('flow-canvas');
+    let idCounter = 0;
+    let selectedNode = null;
+
+    paletteItems.forEach(item => {
+      item.addEventListener('dragstart', e => {
+        e.dataTransfer.setData('text/plain', item.dataset.type);
+      });
+    });
+
+    canvas.addEventListener('dragover', e => e.preventDefault());
+    canvas.addEventListener('drop', e => {
+      e.preventDefault();
+      const type = e.dataTransfer.getData('text/plain');
+      const node = document.createElement('div');
+      const x = e.offsetX, y = e.offsetY;
+      node.className = 'node holo-glow scanlines';
+      node.textContent = type.charAt(0).toUpperCase() + type.slice(1);
+      node.style.left = x + 'px'; node.style.top = y + 'px';
+      node.id = 'node-' + (++idCounter);
+      node.draggable = true;
+      canvas.appendChild(node);
+      makeNodeInteractive(node);
+    });
+
+    function makeNodeInteractive(node) {
+      node.addEventListener('dragstart', e => {
+        e.dataTransfer.setData('application/node-id', node.id);
+      });
+      node.addEventListener('dragend', e => {
+        node.style.left = e.offsetX + 'px'; node.style.top = e.offsetY + 'px';
+      });
+      node.addEventListener('click', e => {
+        e.stopPropagation();
+        if (selectedNode) {
+          // draw connection
+          new LeaderLine(selectedNode, node, { color: 'cyan', size: 2 });
+        }
+        // select this node
+        if (selectedNode) selectedNode.classList.remove('selected');
+        selectedNode = node;
+        node.classList.add('selected');
+      });
+      node.addEventListener('dblclick', e => {
+        e.stopPropagation();
+        const newName = prompt('Enter step name:', node.textContent);
+        if (newName) node.textContent = newName;
+      });
+    }
+
+    // deselect on canvas click
+    canvas.addEventListener('click', () => {
+      if (selectedNode) selectedNode.classList.remove('selected');
+      selectedNode = null;
+    });
+
+    function toggleFullScreen() {
+      if (!document.fullscreenElement) canvas.requestFullscreen();
+      else document.exitFullscreen();
+    }
+
+  </script>
+
+    <div class="h-32"></div>
+
+  <!-- Slack-style Communication Interface -->
+  <section id="chat-interface" class="py-20 px-8 mx-auto relative z-10">
+    <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg" style="z-index:-1;">
+      <defs>
+        <pattern id="grid-chat" width="80" height="80" patternUnits="userSpaceOnUse">
+          <path d="M80 0 L0 0 0 80" class="stroke-line" />
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#grid-chat)" />
+    </svg>
+    <h2 class="text-3xl font-bold text-white mb-6">Project Chat</h2>
+    <div class="glass rounded-2xl p-6 holo-glow scanlines flex flex-col" style="height: 420px;">
+      <div id="chat-messages" class="flex-1 overflow-y-auto mb-4 space-y-3 pr-2" style="max-height: 300px;">
+        <!-- Messages will appear here -->
+      </div>
+      <form id="chat-form" class="flex gap-2">
+        <input id="chat-input" type="text" autocomplete="off" placeholder="Type a message..." class="flex-1 p-2 rounded glass border border-cyan-400/20 text-cyan-100 bg-transparent focus:outline-none" />
+        <button type="submit" class="px-4 py-2 rounded glass holo-glow border border-cyan-400/30 hover:border-cyan-300 transition text-white">Send</button>
+      </form>
+    </div>
+  </section>
+
+  <script>
+    // Slack-style chat logic
+    const chatMessages = document.getElementById('chat-messages');
+    const chatForm = document.getElementById('chat-form');
+    const chatInput = document.getElementById('chat-input');
+    // Simple in-memory message store
+    const chatHistory = [
+      { user: 'Dr. Smith', text: 'Welcome to the project chat!', time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }
+    ];
+    function renderMessages() {
+      chatMessages.innerHTML = '';
+      chatHistory.forEach(msg => {
+        const div = document.createElement('div');
+        div.className = 'flex items-start gap-3';
+        div.innerHTML = `
+          <div class="flex-shrink-0 w-8 h-8 rounded-full bg-cyan-900 flex items-center justify-center text-white font-bold text-lg">${msg.user[0]}</div>
+          <div>
+            <div class="text-cyan-100 font-semibold text-sm">${msg.user} <span class="text-xs text-cyan-400 ml-2">${msg.time}</span></div>
+            <div class="text-white">${msg.text}</div>
+          </div>
+        `;
+        chatMessages.appendChild(div);
+      });
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    renderMessages();
+    chatForm.addEventListener('submit', e => {
+      e.preventDefault();
+      const text = chatInput.value.trim();
+      if (!text) return;
+      chatHistory.push({
+        user: 'You',
+        text,
+        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+      });
+      renderMessages();
+      chatInput.value = '';
+    });
+  </script>
+
+    <div class="h-32"></div>
+
+
+  <!-- Step Detail Component -->
+  <section id="step-detail" class="py-20 px-8 mx-auto relative z-10">
+    <!-- Blueprint Grid SVG background -->
+    <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg" style="z-index:-1;">
+      <defs>
+        <pattern id="grid-step" width="80" height="80" patternUnits="userSpaceOnUse">
+          <path d="M80 0 L0 0 0 80" class="stroke-line" />
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#grid-step)" />
+    </svg>
+    
+    <h2 class="text-4xl font-bold text-white mb-6">Step Detail</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 ">
+      <!-- Editor -->
+      <div>
+        <label class="text-sm text-white mb-2 block">Edit Step Description</label>
+        <textarea id="step-editor" class="editor holo-glow" placeholder="Write step instructions in Markdown..."></textarea>
+      </div>
+      <!-- Preview -->
+      <div>
+        <label class="text-sm text-white mb-2 block">Live Preview</label>
+        <div id="step-preview" class="preview holo-glow"></div>
+      </div>
+    </div>
+
+    <!-- File Attachments -->
+    <div class="mt-8">
+      <label class="text-sm text-white mb-2 block">Attachments</label>
+      <div id="file-drop" class="file-drop holo-glow">
+        <i class="fas fa-cloud-upload-alt text-3xl text-cyan-300 mb-2"></i>
+        <p class="text-cyan-100/80">Drag & drop files here or click to upload</p>
+        <input type="file" id="file-input" multiple class="hidden" />
+      </div>
+      <ul id="file-list" class="mt-4 list-disc list-inside text-cyan-100/80"></ul>
+    </div>
+
+    <!-- AI-Generated Scores -->
+    <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="rating">
+        <span class="w-32">Reproducibility:</span>
+        <span id="repro-score" class="text-xl font-bold">—</span>
+      </div>
+      <div class="rating">
+        <span class="w-32">Impact:</span>
+        <span id="impact-score" class="text-xl font-bold">—</span>
+      </div>
+      <div class="rating">
+        <span class="w-32">Difficulty:</span>
+        <span id="diff-score" class="text-xl font-bold">—</span>
+      </div>
+    </div>
+    <div class="mt-4 text-right">
+      <button id="regen-scores" class="px-4 py-2 glass holo-glow rounded-lg border border-cyan-400/30 hover:border-cyan-300 transition">Grade it</button>
+    </div>
+
+    <!-- Additional Fields -->
+    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <label class="text-sm text-white mb-2 block">Estimated Time (mins)</label>
+        <input type="number" id="est-time" class="w-full p-2 glass text-cyan-100" placeholder="e.g. 45" />
+      </div>
+      <div>
+        <label class="text-sm text-white mb-2 block">Assigned To</label>
+        <input type="text" id="assigned-to" class="w-full p-2 glass text-cyan-100" placeholder="e.g. Dr. Smith" />
+      </div>
+    </div>
+
+    <div class="mt-8 text-right">
+      <button id="save-step" class="px-6 py-3 glass holo-glow rounded-lg border border-cyan-400/30 hover:border-cyan-300 transition">Save Step</button>
+    </div>
+  </section>
+
+  <!-- Scripts -->
+  <!-- Markdown parser -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script>
+    const editor = document.getElementById('step-editor');
+    const preview = document.getElementById('step-preview');
+    // Use marked.parse to avoid "marked is not a function"
+    editor.addEventListener('input', () => {
+      preview.innerHTML = marked.parse(editor.value || '');
+    });
+
+    // File drop handlers omitted for brevity
+
+    // AI score generation placeholder
+    const regenBtn = document.getElementById('regen-scores');
+    const fields = ['repro','impact','diff'];
+    regenBtn.addEventListener('click', async () => {
+      regenBtn.disabled = true;
+      regenBtn.textContent = 'Generating...';
+      // Placeholder for real AI call
+      await new Promise(r => setTimeout(r, 1000));
+      fields.forEach(id => {
+        const val = (Math.random()*5).toFixed(1);
+        document.getElementById(id+'-score').textContent = val;
+      });
+      regenBtn.textContent = 'Grade it again';
+      regenBtn.disabled = false;
+    });
+
+    // Shoulder panel open/close logic
+    const shoulderPanel = document.getElementById('shoulder-panel');
+    const openShoulder = document.getElementById('open-shoulder');
+    const closeShoulder = document.getElementById('close-shoulder');
+    let shoulderOpen = false;
+    function setShoulder(open) {
+      if (open) {
+        shoulderPanel.style.opacity = '1';
+        shoulderPanel.style.visibility = 'visible';
+        openShoulder.style.display = 'none';
+      } else {
+        shoulderPanel.style.opacity = '0';
+        shoulderPanel.style.visibility = 'hidden';
+        openShoulder.style.display = 'block';
+      }
+      shoulderOpen = open;
+    }
+    openShoulder.addEventListener('click', () => setShoulder(true));
+    closeShoulder.addEventListener('click', () => setShoulder(false));
+    setShoulder(false);
+
+    // Optionally, sync stats from step detail if desired:
+    // document.getElementById('regen-scores').addEventListener('click', () => {
+    //   document.getElementById('shoulder-repro').textContent = document.getElementById('repro-score').textContent;
+    //   document.getElementById('shoulder-impact').textContent = document.getElementById('impact-score').textContent;
+    //   document.getElementById('shoulder-diff').textContent = document.getElementById('diff-score').textContent;
+    // });
+
+  </script>
+
+    <div class="h-32"></div>
+
+  <!-- Global Discovery Feed -->
+  <section id="global-discovery-feed" class="py-20 px-8 mx-auto relative z-10 max-w-6xl">
+    <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <pattern id="grid-discovery" width="80" height="80" patternUnits="userSpaceOnUse">
+          <path d="M80 0 L0 0 0 80" class="stroke-line" />
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#grid-discovery)" />
+    </svg>
+    <h2 class="text-3xl font-bold text-white mb-6">Global Discovery Feed</h2>
+    <p class="text-cyan-100/80 mb-8">AI-curated experiments in your area and suggested collaborators.</p>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="discovery-feed-list">
+      <!-- Feed items will be injected here -->
+    </div>
+  </section>
+  <script>
+    // --- Global Discovery Feed Logic ---
+    const discoveryExperiments = [
+      {
+        title: "Rapid mRNA Vaccine Prototyping",
+        desc: "A new platform for rapid prototyping of mRNA vaccines, enabling faster pandemic response.",
+        field: "Biology",
+        status: "Ongoing",
+        lead: "Dr. Jane Doe",
+        tags: ["mRNA", "pandemic", "vaccine"],
+        aiScore: 9.1
+      },
+      {
+        title: "AI-Driven Protein Folding",
+        desc: "Leveraging deep learning to predict protein structures with high accuracy.",
+        field: "AI",
+        status: "Significant Result",
+        lead: "Dr. Alan Turing",
+        tags: ["protein", "deep learning", "biology"],
+        aiScore: 9.4
+      },
+      {
+        title: "Open Energy Storage Models",
+        desc: "Open-source models for optimizing grid-scale energy storage and renewables integration.",
+        field: "Energy",
+        status: "Needs Funding",
+        lead: "Dr. Lisa Su",
+        tags: ["energy", "open-source", "storage"],
+        aiScore: 8.7
+      },
+      {
+        title: "Neurodegeneration Early Detection",
+        desc: "AI-powered biomarkers for early detection of neurodegenerative diseases.",
+        field: "Neuroscience",
+        status: "Ongoing",
+        lead: "Dr. Wang",
+        tags: ["AI", "biomarkers", "health"],
+        aiScore: 8.9
+      },
+      {
+        title: "Transparent AI Alignment Audits",
+        desc: "Framework for transparent, reproducible audits of AI alignment research.",
+        field: "AI",
+        status: "AI: Needs More Research",
+        lead: "Dr. Patel",
+        tags: ["alignment", "audit", "transparency"],
+        aiScore: 8.3
+      },
+      {
+        title: "Climate-Resilient Crop Engineering",
+        desc: "Genetic engineering for crops resilient to climate extremes.",
+        field: "Biology",
+        status: "Statistically Insignificant",
+        lead: "Dr. Smith",
+        tags: ["climate", "crops", "genetics"],
+        aiScore: 7.8
+      }
+    ];
+
+    const suggestedCollaborators = [
+      { name: "Dr. Jane Doe", field: "Biology", expertise: ["mRNA", "pandemics"], avatar: "🧬" },
+      { name: "Dr. Alan Turing", field: "AI", expertise: ["deep learning", "alignment"], avatar: "🤖" },
+      { name: "Dr. Lisa Su", field: "Energy", expertise: ["storage", "optimization"], avatar: "🔋" },
+      { name: "Dr. Wang", field: "Neuroscience", expertise: ["biomarkers", "AI"], avatar: "🧠" },
+      { name: "Dr. Patel", field: "AI", expertise: ["audit", "transparency"], avatar: "📊" },
+      { name: "Dr. Smith", field: "Biology", expertise: ["genetics", "climate"], avatar: "🌱" }
+    ];
+
+    function renderDiscoveryFeed() {
+      const list = document.getElementById('discovery-feed-list');
+      list.innerHTML = '';
+      // Experiments
+      discoveryExperiments.forEach(exp => {
+        const div = document.createElement('div');
+        div.className = "glass rounded-2xl p-6 holo-glow scanlines flex flex-col gap-2";
+        div.innerHTML = `
+          <div class="flex items-center gap-2 mb-1">
+            <span class="inline-block w-2 h-2 rounded-full mr-2" style="background:${{
+              "Ongoing":"#ff9800",
+              "Significant Result":"#4caf50",
+              "Needs Funding":"#ffeb3b",
+              "Statistically Insignificant":"#ff1744",
+              "AI: Needs More Research":"#2196f3"
+            }[exp.status] || "#ccc"}"></span>
+            <span class="text-cyan-100 font-semibold text-lg">${exp.title}</span>
+          </div>
+          <div class="text-white text-sm mb-1">${exp.desc}</div>
+          <div class="flex flex-wrap gap-2 text-xs mb-1">
+            <span class="bg-cyan-900 px-2 py-1 rounded">${exp.field}</span>
+            ${exp.tags.map(t=>`<span class="bg-cyan-800 px-2 py-1 rounded">${t}</span>`).join('')}
+          </div>
+          <div class="text-cyan-100/80 text-xs mb-1">Lead: <span class="text-cyan-300">${exp.lead}</span></div>
+          <div class="text-cyan-400 text-xs mb-1">AI Score: <span class="font-bold">${exp.aiScore}</span></div>
+          <button class="mt-2 px-4 py-2 glass holo-glow rounded border border-cyan-400/30 hover:border-cyan-300 transition text-white text-sm">View Experiment</button>
+        `;
+        list.appendChild(div);
+      });
+      // Collaborators
+      const colDiv = document.createElement('div');
+      colDiv.className = "glass rounded-2xl p-6 holo-glow scanlines flex flex-col gap-2";
+      colDiv.innerHTML = `
+        <div class="text-cyan-100 font-semibold text-lg mb-2">Suggested Collaborators</div>
+        <div class="flex flex-col gap-3">
+          ${suggestedCollaborators.map(c => `
+            <div class="flex items-center gap-3">
+              <span class="text-2xl">${c.avatar}</span>
+              <div>
+                <div class="text-white font-semibold">${c.name}</div>
+                <div class="text-cyan-100/80 text-xs">${c.field} &mdash; ${c.expertise.join(', ')}</div>
+                <button class="mt-1 px-3 py-1 glass rounded border border-cyan-400/20 text-white hover:border-cyan-300 text-xs">Connect</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+      list.appendChild(colDiv);
+    }
+    renderDiscoveryFeed();
+  </script>
+
+    <div class="h-32"></div>
+
+    <!-- Experiment Settings Interface (for each experiment) -->
+    <template id="experiment-settings-template">
+      <div class="glass rounded-2xl p-8 holo-glow scanlines max-w-2xl mx-auto my-12 relative z-10">
+        <h3 class="text-2xl font-bold text-white mb-4">Experiment Settings</h3>
+        <div class="mb-6">
+          <label class="block text-white font-semibold mb-2">Experiment Title</label>
+          <input type="text" class="w-full p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent" data-settings="title" />
+        </div>
+        <div class="mb-6">
+          <label class="block text-white font-semibold mb-2">Protocol Version</label>
+          <div class="flex gap-2 items-center">
+            <select class="p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent" data-settings="version"></select>
+            <button class="px-3 py-1 glass rounded border border-cyan-400/20 text-white hover:border-cyan-300 text-xs" data-settings="fork">Fork</button>
+            <span class="text-cyan-100/70 text-xs ml-2" data-settings="forked-from"></span>
+          </div>
+        </div>
+        <div class="mb-6">
+          <label class="block text-white font-semibold mb-2">Collaborators</label>
+          <div class="flex flex-wrap gap-2 mb-2" data-settings="collaborators-list"></div>
+          <div class="flex gap-2">
+            <input type="text" class="flex-1 p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent" placeholder="Add collaborator (name or email)" data-settings="collab-input" />
+            <button class="px-3 py-1 glass rounded border border-cyan-400/20 text-white hover:border-cyan-300 text-xs" data-settings="add-collab">Add</button>
+          </div>
+        </div>
+        <div class="mb-6">
+          <label class="block text-white font-semibold mb-2">Integrity Layer</label>
+          <div class="mb-2 text-cyan-100/80 text-sm">Funders & Sources:</div>
+          <ul class="list-disc list-inside text-cyan-100/90 mb-2" data-settings="funders-list"></ul>
+          <div class="flex gap-2">
+            <input type="text" class="flex-1 p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent" placeholder="Add funder/source" data-settings="funder-input" />
+            <button class="px-3 py-1 glass rounded border border-cyan-400/20 text-white hover:border-cyan-300 text-xs" data-settings="add-funder">Add</button>
+          </div>
+        </div>
+        <div class="mb-6">
+          <label class="block text-white font-semibold mb-2">Visibility</label>
+          <select class="p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent" data-settings="visibility">
+            <option value="public">Public</option>
+            <option value="collaborators">Collaborators Only</option>
+            <option value="private">Private</option>
+          </select>
+        </div>
+        <div class="mb-6">
+          <label class="block text-white font-semibold mb-2">Archive/Withdraw</label>
+          <button class="px-4 py-2 glass rounded border border-red-400/30 text-red-300 hover:border-red-300 text-sm" data-settings="archive">Archive Experiment</button>
+          <button class="ml-2 px-4 py-2 glass rounded border border-yellow-400/30 text-yellow-300 hover:border-yellow-300 text-sm" data-settings="withdraw">Withdraw Experiment</button>
+        </div>
+        <div class="text-right">
+          <button class="px-6 py-3 glass holo-glow rounded-lg border border-cyan-400/30 hover:border-cyan-300 transition" data-settings="save">Save Settings</button>
+        </div>
+      </div>
+    </template>
+    <div id="experiment-settings-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(10,20,40,0.85); z-index:1000; align-items:center; justify-content:center;">
+      <div id="experiment-settings-content"></div>
+    </div>
+    <script>
+      // --- Experiment Settings Logic (demo, not persistent) ---
+      // Example experiment data
+      let experimentSettingsData = {
+        title: "Rapid mRNA Vaccine Prototyping",
+        versions: [
+          { version: "v1.0", date: "2024-01-10", forkedFrom: null },
+          { version: "v1.1", date: "2024-03-02", forkedFrom: "v1.0" }
+        ],
+        currentVersion: "v1.1",
+        forkedFrom: "v1.0",
+        collaborators: ["Dr. Jane Doe", "Dr. Alan Turing"],
+        funders: ["Open Science Foundation", "NIH Grant #12345"],
+        visibility: "public",
+        archived: false,
+        withdrawn: false
+      };
+
+      function openExperimentSettings(expData = experimentSettingsData) {
+        const modal = document.getElementById('experiment-settings-modal');
+        const content = document.getElementById('experiment-settings-content');
+        const tpl = document.getElementById('experiment-settings-template');
+        content.innerHTML = '';
+        const node = document.importNode(tpl.content, true);
+        // Title
+        node.querySelector('[data-settings="title"]').value = expData.title;
+        // Versions
+        const versionSel = node.querySelector('[data-settings="version"]');
+        expData.versions.forEach(v => {
+          const opt = document.createElement('option');
+          opt.value = v.version;
+          opt.textContent = `${v.version} (${v.date})`;
+          versionSel.appendChild(opt);
+        });
+        versionSel.value = expData.currentVersion;
+        // Forked from
+        const forkedFrom = expData.versions.find(v => v.version === expData.currentVersion)?.forkedFrom;
+        node.querySelector('[data-settings="forked-from"]').textContent = forkedFrom ? `Forked from ${forkedFrom}` : "";
+        // Fork button
+        node.querySelector('[data-settings="fork"]').onclick = () => {
+          const newVer = prompt("Enter new version label (e.g. v1.2):", "");
+          if (newVer) {
+            expData.versions.push({ version: newVer, date: new Date().toISOString().slice(0,10), forkedFrom: expData.currentVersion });
+            expData.currentVersion = newVer;
+            openExperimentSettings(expData);
+          }
+        };
+        // Collaborators
+        const collabList = node.querySelector('[data-settings="collaborators-list"]');
+        function renderCollabs() {
+          collabList.innerHTML = '';
+          expData.collaborators.forEach((c, i) => {
+            const span = document.createElement('span');
+            span.className = "inline-flex items-center px-2 py-1 rounded bg-cyan-900 text-cyan-100 text-xs font-semibold";
+            span.textContent = c;
+            const rm = document.createElement('button');
+            rm.className = "ml-2 text-red-400 hover:text-red-300 text-xs";
+            rm.innerHTML = '<i class="fas fa-times"></i>';
+            rm.onclick = () => { expData.collaborators.splice(i,1); renderCollabs(); };
+            span.appendChild(rm);
+            collabList.appendChild(span);
+          });
+        }
+        renderCollabs();
+        node.querySelector('[data-settings="add-collab"]').onclick = () => {
+          const input = node.querySelector('[data-settings="collab-input"]');
+          const val = input.value.trim();
+          if (val && !expData.collaborators.includes(val)) {
+            expData.collaborators.push(val);
+            input.value = '';
+            renderCollabs();
+          }
+        };
+        // Funders
+        const fundersList = node.querySelector('[data-settings="funders-list"]');
+        function renderFunders() {
+          fundersList.innerHTML = '';
+          expData.funders.forEach((f, i) => {
+            const li = document.createElement('li');
+            li.textContent = f;
+            const rm = document.createElement('button');
+            rm.className = "ml-2 text-red-400 hover:text-red-300 text-xs";
+            rm.innerHTML = '<i class="fas fa-times"></i>';
+            rm.onclick = () => { expData.funders.splice(i,1); renderFunders(); };
+            li.appendChild(rm);
+            fundersList.appendChild(li);
+          });
+        }
+        renderFunders();
+        node.querySelector('[data-settings="add-funder"]').onclick = () => {
+          const input = node.querySelector('[data-settings="funder-input"]');
+          const val = input.value.trim();
+          if (val && !expData.funders.includes(val)) {
+            expData.funders.push(val);
+            input.value = '';
+            renderFunders();
+          }
+        };
+        // Visibility
+        node.querySelector('[data-settings="visibility"]').value = expData.visibility;
+        // Archive/Withdraw
+        node.querySelector('[data-settings="archive"]').onclick = () => {
+          if (confirm("Archive this experiment?")) { expData.archived = true; modal.style.display = "none"; }
+        };
+        node.querySelector('[data-settings="withdraw"]').onclick = () => {
+          if (confirm("Withdraw this experiment?")) { expData.withdrawn = true; modal.style.display = "none"; }
+        };
+        // Save
+        node.querySelector('[data-settings="save"]').onclick = () => {
+          expData.title = node.querySelector('[data-settings="title"]').value;
+          expData.currentVersion = node.querySelector('[data-settings="version"]').value;
+          expData.visibility = node.querySelector('[data-settings="visibility"]').value;
+          // Save logic would go here
+          modal.style.display = "none";
+        };
+        content.appendChild(node);
+        modal.style.display = "flex";
+        // Close on background click
+        modal.onclick = e => { if (e.target === modal) modal.style.display = "none"; };
+      }
+
+      // Example: attach to all "View Experiment" buttons in the discovery feed
+      document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(() => {
+          document.querySelectorAll('#discovery-feed-list button').forEach(btn => {
+            btn.onclick = () => openExperimentSettings();
+          });
+        }, 500);
+      });
+    </script>
+
+    <div class="h-32"></div>
+
+  <!-- Suggested Grants Component -->
+  <section id="suggested-grants" class="py-20 px-8 mx-auto relative z-10 max-w-4xl">
+      <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg" style="z-index:-1;">
+        <defs>
+          <pattern id="grid-grants" width="80" height="80" patternUnits="userSpaceOnUse">
+            <path d="M80 0 L0 0 0 80" class="stroke-line" />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#grid-grants)" />
+      </svg>
+      <h2 class="text-3xl font-bold text-white mb-6">Suggested Grants For You</h2>
+      <p class="text-cyan-100/80" style="margin-bottom: 30px;">Click 'apply now' to see the grant application.<br></p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="glass rounded-2xl p-6 holo-glow scanlines flex flex-col">
+          <div class="text-xl font-semibold text-cyan-100 mb-2">AI for Good Challenge</div>
+          <div class="text-white mb-2">Funding: <span class="text-cyan-300">$100,000</span></div>
+          <div class="text-cyan-100/80 mb-4">Support for projects using AI to address global challenges in health, climate, and education.</div>
+          <button class="text-cyan-300 underline hover:text-white transition" onclick="openGrantApplication('AI for Good Challenge', 100000)">Apply Now</button>
+        </div>
+        <div class="glass rounded-2xl p-6 holo-glow scanlines flex flex-col">
+          <div class="text-xl font-semibold text-cyan-100 mb-2">NextGen Science Grant</div>
+          <div class="text-white mb-2">Funding: <span class="text-cyan-300">$250,000</span></div>
+          <div class="text-cyan-100/80 mb-4">For early-stage, high-impact research in biotechnology, energy, and advanced computing.</div>
+          <button class="text-cyan-300 underline hover:text-white transition" onclick="openGrantApplication('NextGen Science Grant', 250000)">Apply Now</button>
+        </div>
+        <div class="glass rounded-2xl p-6 holo-glow scanlines flex flex-col">
+          <div class="text-xl font-semibold text-cyan-100 mb-2">Open Science Accelerator</div>
+          <div class="text-white mb-2">Funding: <span class="text-cyan-300">$50,000</span></div>
+          <div class="text-cyan-100/80 mb-4">Grants for open-source tools and reproducibility in scientific research.</div>
+          <button class="text-cyan-300 underline hover:text-white transition" onclick="openGrantApplication('Open Science Accelerator', 50000)">Apply Now</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="h-32"></div>
+
+    <!-- Grant Application Page Component (single grant, project selection, metrics, and budget) -->
+    <section id="grant-application" class="py-20 px-8 mx-auto relative z-10 max-w-2xl hidden">
+      <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg" style="z-index:-1;">
+        <defs>
+          <pattern id="grid-apply" width="80" height="80" patternUnits="userSpaceOnUse">
+            <path d="M80 0 L0 0 0 80" class="stroke-line" />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#grid-apply)" />
+      </svg>
+      <h2 class="text-3xl font-bold text-white mb-6" id="grant-app-title">Grant Application</h2>
+      <div class="glass rounded-2xl p-8 holo-glow scanlines flex flex-col gap-6">
+        <div class="mb-4">
+          <div class="text-white text-lg font-semibold">Grant: <span id="grant-app-grant-name"></span></div>
+          <div class="text-white">Funding Available: <span id="grant-app-funding" class="text-cyan-300"></span></div>
+        </div>
+        <form id="grant-application-form" class="flex flex-col gap-6">
+          <div>
+            <label class="block text-white mb-2">Select Your Project</label>
+            <select id="grant-app-project" name="project" class="w-full p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent" required>
+              <!-- Populated by JS -->
+            </select>
+          </div>
+          <div id="grant-app-project-details" class="mb-4 hidden">
+            <div class="mb-2 text-cyan-100/80">Estimated Budget Needed: <span id="grant-app-project-budget" class="text-cyan-300"></span></div>
+            <div class="flex gap-6">
+              <div>Reproducibility: <span id="grant-app-project-repro" class="text-white"></span></div>
+              <div>Impact: <span id="grant-app-project-impact" class="text-white"></span></div>
+              <div>Difficulty: <span id="grant-app-project-diff" class="text-white"></span></div>
+            </div>
+          </div>
+          <div>
+            <label class="block text-white mb-2">Why is your project a good fit for this grant?</label>
+            <textarea name="fit" class="w-full p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent" rows="3" required></textarea>
+          </div>
+          <div>
+            <label class="block text-white mb-2">How will you use the funding?</label>
+            <textarea name="usage" class="w-full p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent" rows="3" required></textarea>
+          </div>
+          <div class="text-right">
+            <button type="submit" class="px-6 py-3 glass holo-glow rounded-lg border border-cyan-400/30 hover:border-cyan-300 transition">Submit Application</button>
+          </div>
+          <div id="grant-application-success" class="hidden text-green-400 mt-4">Application submitted! Thank you.</div>
+        </form>
+      </div>
+    </section>
+    <script>
+      // Example user projects (would be dynamic in real app)
+      const userProjects = [
+        {
+          id: 'p1',
+          title: 'Open-Source Pandemic Modeling',
+          budget: 120000,
+          reproducibility: 4.2,
+          impact: 4.7,
+          difficulty: 2.9
+        },
+        {
+          id: 'p2',
+          title: 'AI Alignment Toolkit',
+          budget: 95000,
+          reproducibility: 3.9,
+          impact: 4.9,
+          difficulty: 3.2
+        },
+        {
+          id: 'p3',
+          title: 'Energy Storage Optimization',
+          budget: 180000,
+          reproducibility: 4.5,
+          impact: 4.2,
+          difficulty: 3.8
+        }
+      ];
+
+      // Open grant application for a specific grant
+      function openGrantApplication(grantName, funding) {
+        document.getElementById('grant-app-title').textContent = `Apply for: ${grantName}`;
+        document.getElementById('grant-app-grant-name').textContent = grantName;
+        document.getElementById('grant-app-funding').textContent = `$${funding.toLocaleString()}`;
+        // Populate project select
+        const select = document.getElementById('grant-app-project');
+        select.innerHTML = '';
+        userProjects.forEach(p => {
+          const opt = document.createElement('option');
+          opt.value = p.id;
+          opt.textContent = p.title;
+          select.appendChild(opt);
+        });
+        // Hide details until project is selected
+        document.getElementById('grant-app-project-details').classList.add('hidden');
+        document.getElementById('grant-application').classList.remove('hidden');
+        window.scrollTo({ top: document.getElementById('grant-application').offsetTop - 80, behavior: 'smooth' });
+      }
+
+      // Show project details on selection
+      document.addEventListener('DOMContentLoaded', function() {
+        const select = document.getElementById('grant-app-project');
+        if (select) {
+          select.addEventListener('change', function() {
+            const p = userProjects.find(x => x.id === select.value);
+            if (p) {
+              document.getElementById('grant-app-project-budget').textContent = `$${p.budget.toLocaleString()}`;
+              document.getElementById('grant-app-project-repro').textContent = p.reproducibility;
+              document.getElementById('grant-app-project-impact').textContent = p.impact;
+              document.getElementById('grant-app-project-diff').textContent = p.difficulty;
+              document.getElementById('grant-app-project-details').classList.remove('hidden');
+            } else {
+              document.getElementById('grant-app-project-details').classList.add('hidden');
+            }
+          });
+        }
+      });
+
+      // Grant Application Form Handler
+      const grantForm = document.getElementById('grant-application-form');
+      if (grantForm) {
+        grantForm.addEventListener('submit', function(e) {
+          e.preventDefault();
+          document.getElementById('grant-application-success').classList.remove('hidden');
+          grantForm.reset();
+          document.getElementById('grant-app-project-details').classList.add('hidden');
+        });
+      }
+    </script>
+
+    <div class="h-32"></div>
+
+    <!-- Funder: Applicant Selection Interface -->
+    <section id="funder-applicant-selection" class="py-20 px-8 mx-auto relative z-10 max-w-5xl">
+      <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg" style="z-index:-1;">
+        <defs>
+          <pattern id="grid-funder-apps" width="80" height="80" patternUnits="userSpaceOnUse">
+            <path d="M80 0 L0 0 0 80" class="stroke-line" />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#grid-funder-apps)" />
+      </svg>
+      <h2 class="text-3xl font-bold text-white mb-6">Select Applicants for Grant</h2>
+      <div class="mb-6">
+        <label class="text-cyan-100/80 mr-2">Grant:</label>
+        <select id="funder-grant-select" class="p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent">
+          <option value="AI for Good Challenge">AI for Good Challenge</option>
+          <option value="NextGen Science Grant">NextGen Science Grant</option>
+          <option value="Open Science Accelerator">Open Science Accelerator</option>
+        </select>
+      </div>
+      <div id="funder-applicant-list" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Applicants will be rendered here -->
+      </div>
+    </section>
+
+    <div class="h-32"></div>
+
+    <!-- Funder: Grant Progress Monitoring Interface -->
+    <section id="funder-grant-progress" class="py-20 px-8 mx-auto relative z-10 max-w-4xl">
+      <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg" style="z-index:-1;">
+        <defs>
+          <pattern id="grid-funder-progress" width="80" height="80" patternUnits="userSpaceOnUse">
+            <path d="M80 0 L0 0 0 80" class="stroke-line" />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#grid-funder-progress)" />
+      </svg>
+      <h2 class="text-3xl font-bold text-white mb-6">Monitor Grant Progress</h2>
+      <div class="mb-6">
+        <label class="text-cyan-100/80 mr-2">Funded Project:</label>
+        <select id="funder-progress-project-select" class="p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent">
+          <!-- Populated by JS -->
+        </select>
+      </div>
+      <div id="funder-progress-details" class="glass rounded-2xl p-8 holo-glow scanlines">
+        <!-- Progress details will be rendered here -->
+      </div>
+    </section>
+
+    <script>
+      // --- Funder Applicant Selection Data ---
+      const grantApplicants = {
+        "AI for Good Challenge": [
+          {
+            applicant: "Dr. Jane Doe",
+            project: "Open-Source Pandemic Modeling",
+            fit: "Our project leverages AI to model and predict pandemic spread, directly aligned with the grant's mission.",
+            usage: "Funds will be used for data acquisition and model validation.",
+            budget: 120000,
+            reproducibility: 4.2,
+            impact: 4.7,
+            difficulty: 2.9,
+            aiScore: 9.2
+          },
+          {
+            applicant: "Dr. Alan Turing",
+            project: "AI Alignment Toolkit",
+            fit: "Toolkit for safe and robust AI, with open-source components for the community.",
+            usage: "Funding will support software development and workshops.",
+            budget: 95000,
+            reproducibility: 3.9,
+            impact: 4.9,
+            difficulty: 3.2,
+            aiScore: 8.8
+          }
+        ],
+        "NextGen Science Grant": [
+          {
+            applicant: "Dr. Lisa Su",
+            project: "Energy Storage Optimization",
+            fit: "Optimizing battery storage for renewable energy, high impact for energy sector.",
+            usage: "Funds for hardware prototyping and field tests.",
+            budget: 180000,
+            reproducibility: 4.5,
+            impact: 4.2,
+            difficulty: 3.8,
+            aiScore: 9.0
+          }
+        ],
+        "Open Science Accelerator": [
+          {
+            applicant: "Dr. Jane Doe",
+            project: "Open-Source Pandemic Modeling",
+            fit: "Open-source tools for pandemic modeling, improving reproducibility.",
+            usage: "Funds for documentation and open data releases.",
+            budget: 120000,
+            reproducibility: 4.2,
+            impact: 4.7,
+            difficulty: 2.9,
+            aiScore: 8.5
+          }
+        ]
+      };
+
+      // --- Funder Grant Progress Data ---
+      const fundedProjects = [
+        {
+          project: "Open-Source Pandemic Modeling",
+          applicant: "Dr. Jane Doe",
+          grant: "AI for Good Challenge",
+          steps: [
+            { name: "Data Collection", completed: true },
+            { name: "Model Development", completed: true },
+            { name: "Validation", completed: false },
+            { name: "Deployment", completed: false }
+          ]
+        },
+        {
+          project: "Energy Storage Optimization",
+          applicant: "Dr. Lisa Su",
+          grant: "NextGen Science Grant",
+          steps: [
+            { name: "Prototype Design", completed: true },
+            { name: "Lab Testing", completed: false },
+            { name: "Field Deployment", completed: false }
+          ]
+        }
+      ];
+
+      // --- Render Applicant Selection ---
+      function renderApplicantList(grantName) {
+        const container = document.getElementById('funder-applicant-list');
+        container.innerHTML = '';
+        let applicants = grantApplicants[grantName] || [];
+        // Sort by AI score descending
+        applicants = applicants.slice().sort((a, b) => b.aiScore - a.aiScore);
+        applicants.forEach(app => {
+          const div = document.createElement('div');
+          div.className = 'glass rounded-2xl p-6 holo-glow scanlines flex flex-col gap-2';
+          div.innerHTML = `
+            <div class="text-xl font-semibold text-cyan-100 mb-1">${app.project}</div>
+            <div class="text-white mb-1">Applicant: <span class="text-cyan-300">${app.applicant}</span></div>
+            <div class="flex gap-4 mb-1">
+              <div>Budget: <span class="text-cyan-300">$${app.budget.toLocaleString()}</span></div>
+              <div>Reproducibility: <span class="text-white">${app.reproducibility}</span></div>
+              <div>Impact: <span class="text-white">${app.impact}</span></div>
+              <div>Difficulty: <span class="text-white">${app.difficulty}</span></div>
+            </div>
+            <div class="mb-1">AI Score: <span class="text-cyan-400 font-bold">${app.aiScore}</span></div>
+            <div class="mb-1"><span class="text-cyan-100/80">Fit:</span> ${app.fit}</div>
+            <div class="mb-1"><span class="text-cyan-100/80">Usage:</span> ${app.usage}</div>
+            <button class="mt-2 px-4 py-2 glass holo-glow rounded border border-cyan-400/30 hover:border-cyan-300 transition text-white">Select Applicant</button>
+          `;
+          container.appendChild(div);
+        });
+      }
+      document.getElementById('funder-grant-select').addEventListener('change', function() {
+        renderApplicantList(this.value);
+      });
+      // Initial render
+      renderApplicantList(document.getElementById('funder-grant-select').value);
+
+      // --- Render Grant Progress Monitoring ---
+      function renderProgressProjectOptions() {
+        const select = document.getElementById('funder-progress-project-select');
+        select.innerHTML = '';
+        fundedProjects.forEach((p, idx) => {
+          const opt = document.createElement('option');
+          opt.value = idx;
+          opt.textContent = `${p.project} (${p.applicant})`;
+          select.appendChild(opt);
+        });
+      }
+      function renderProgressDetails(idx) {
+        const details = document.getElementById('funder-progress-details');
+        const p = fundedProjects[idx];
+        if (!p) {
+          details.innerHTML = '<div class="text-cyan-100/80">No project selected.</div>';
+          return;
+        }
+        details.innerHTML = `
+          <div class="mb-2 text-cyan-100 font-semibold text-lg">${p.project}</div>
+          <div class="mb-2 text-white">Lead: <span class="text-cyan-300">${p.applicant}</span></div>
+          <div class="mb-4 text-white">Grant: <span class="text-cyan-300">${p.grant}</span></div>
+          <div>
+            <div class="mb-2 text-cyan-100/80">Project Steps:</div>
+            <ul class="list-disc list-inside text-cyan-100/80">
+              ${p.steps.map(step => `
+                <li>
+                  <span class="${step.completed ? 'text-green-400' : 'text-white'}">${step.name}</span>
+                  ${step.completed ? '<i class="fas fa-check-circle text-green-400 ml-2"></i>' : ''}
+                </li>
+              `).join('')}
+            </ul>
+          </div>
+        `;
+      }
+      renderProgressProjectOptions();
+      renderProgressDetails(0);
+      document.getElementById('funder-progress-project-select').addEventListener('change', function() {
+        renderProgressDetails(this.value);
+      });
+    </script>
+
+    <div class="h-32"></div>
+
+    <!-- Funder: Grant Management Interface -->
+    <section id="funder-grant-management" class="py-20 px-8 mx-auto relative z-10 max-w-5xl">
+      <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg" style="z-index:-1;">
+        <defs>
+          <pattern id="grid-funder-grant-mgmt" width="80" height="80" patternUnits="userSpaceOnUse">
+            <path d="M80 0 L0 0 0 80" class="stroke-line" />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#grid-funder-grant-mgmt)" />
+      </svg>
+      <h2 class="text-3xl font-bold text-white mb-6">Manage Grants</h2>
+      <div class="glass rounded-2xl p-8 holo-glow scanlines mb-8">
+        <form id="grant-mgmt-form" class="flex flex-col gap-4">
+          <div class="flex flex-col md:flex-row gap-4">
+            <div class="flex-1">
+              <label class="block text-white mb-1">Grant Name</label>
+              <input type="text" id="grant-mgmt-name" class="w-full p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent" required>
+            </div>
+            <div>
+              <label class="block text-white mb-1">Funding (USD)</label>
+              <input type="number" id="grant-mgmt-funding" class="w-full p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent" required>
+            </div>
+            <div class="flex-1">
+              <label class="block text-white mb-1">Description</label>
+              <input type="text" id="grant-mgmt-desc" class="w-full p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent" required>
+            </div>
+          </div>
+          <div>
+            <label class="block text-white mb-1">Grant Application Questions</label>
+            <div id="grant-mgmt-questions-list" class="flex flex-col gap-2 mb-2"></div>
+            <div class="flex gap-2">
+              <input type="text" id="grant-mgmt-question-input" class="flex-1 p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent" placeholder="Add a question...">
+              <button type="button" id="grant-mgmt-add-question" class="px-3 py-2 glass rounded border border-cyan-400/20 text-white hover:border-cyan-300">Add Question</button>
+            </div>
+          </div>
+          <div class="flex gap-2 mt-2">
+            <button type="submit" id="grant-mgmt-submit" class="px-4 py-2 glass holo-glow rounded border border-cyan-400/30 hover:border-cyan-300 transition text-white">Add Grant</button>
+            <button type="button" id="grant-mgmt-cancel" class="px-4 py-2 glass rounded border border-cyan-400/20 text-white hidden">Cancel</button>
+          </div>
+        </form>
+      </div>
+      <div class="glass rounded-2xl p-8 holo-glow scanlines">
+        <h3 class="text-xl font-semibold text-cyan-100 mb-4">All Grants</h3>
+        <table class="min-w-full text-cyan-100/90">
+          <thead>
+            <tr class="border-b border-cyan-400/20">
+              <th class="py-2 px-4 text-left">Name</th>
+              <th class="py-2 px-4 text-left">Funding</th>
+              <th class="py-2 px-4 text-left">Description</th>
+              <th class="py-2 px-4 text-left">Questions</th>
+              <th class="py-2 px-4 text-left">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="grant-mgmt-table-body">
+            <!-- Populated by JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <script>
+      // Grant management state (simulate persistent storage)
+      let grants = JSON.parse(localStorage.getItem('funder-grants')) || [
+        { name: "AI for Good Challenge", funding: 100000, desc: "Support for projects using AI to address global challenges in health, climate, and education.", questions: ["Why is your project a good fit for this grant?", "How will you use the funding?"] },
+        { name: "NextGen Science Grant", funding: 250000, desc: "For early-stage, high-impact research in biotechnology, energy, and advanced computing.", questions: ["Describe your innovation.", "What is your expected impact?"] },
+        { name: "Open Science Accelerator", funding: 50000, desc: "Grants for open-source tools and reproducibility in scientific research.", questions: ["How will you ensure reproducibility?", "How will you share your results?"] }
+      ];
+      let editIdx = null;
+      let currentQuestions = [];
+
+      function renderGrantMgmtQuestions() {
+        const list = document.getElementById('grant-mgmt-questions-list');
+        list.innerHTML = '';
+        currentQuestions.forEach((q, i) => {
+          const div = document.createElement('div');
+          div.className = "flex items-center gap-2";
+          div.innerHTML = `<span class="flex-1">${q}</span>
+            <button type="button" class="text-red-400 hover:text-red-300 text-xs" onclick="removeGrantQuestion(${i})"><i class="fas fa-times"></i></button>`;
+          list.appendChild(div);
+        });
+      }
+      window.removeGrantQuestion = function(idx) {
+        currentQuestions.splice(idx, 1);
+        renderGrantMgmtQuestions();
+      };
+
+      document.getElementById('grant-mgmt-add-question').addEventListener('click', function() {
+        const input = document.getElementById('grant-mgmt-question-input');
+        const val = input.value.trim();
+        if (val) {
+          currentQuestions.push(val);
+          input.value = '';
+          renderGrantMgmtQuestions();
+        }
+      });
+
+      function renderGrantMgmtTable() {
+        const tbody = document.getElementById('grant-mgmt-table-body');
+        tbody.innerHTML = '';
+        grants.forEach((g, idx) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="py-2 px-4">${g.name}</td>
+            <td class="py-2 px-4">$${g.funding.toLocaleString()}</td>
+            <td class="py-2 px-4">${g.desc}</td>
+            <td class="py-2 px-4">${(g.questions || []).map(q => `<div class="mb-1">${q}</div>`).join('')}</td>
+            <td class="py-2 px-4 flex gap-2">
+              <button class="px-2 py-1 glass rounded border border-cyan-400/20 text-white hover:border-cyan-300" onclick="editGrant(${idx})">Edit</button>
+              <button class="px-2 py-1 glass rounded border border-red-400/20 text-red-300 hover:border-red-300" onclick="removeGrant(${idx})">Remove</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+      renderGrantMgmtTable();
+
+      document.getElementById('grant-mgmt-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const name = document.getElementById('grant-mgmt-name').value.trim();
+        const funding = parseInt(document.getElementById('grant-mgmt-funding').value, 10);
+        const desc = document.getElementById('grant-mgmt-desc').value.trim();
+        if (editIdx === null) {
+          grants.push({ name, funding, desc, questions: [...currentQuestions] });
+        } else {
+          grants[editIdx] = { name, funding, desc, questions: [...currentQuestions] };
+        }
+        localStorage.setItem('funder-grants', JSON.stringify(grants));
+        renderGrantMgmtTable();
+        this.reset();
+        currentQuestions = [];
+        renderGrantMgmtQuestions();
+        document.getElementById('grant-mgmt-submit').textContent = "Add Grant";
+        document.getElementById('grant-mgmt-cancel').classList.add('hidden');
+        editIdx = null;
+      });
+
+      window.removeGrant = function(idx) {
+        if (confirm("Remove this grant?")) {
+          grants.splice(idx, 1);
+          localStorage.setItem('funder-grants', JSON.stringify(grants));
+          renderGrantMgmtTable();
+        }
+      };
+
+      window.editGrant = function(idx) {
+        const g = grants[idx];
+        document.getElementById('grant-mgmt-name').value = g.name;
+        document.getElementById('grant-mgmt-funding').value = g.funding;
+        document.getElementById('grant-mgmt-desc').value = g.desc;
+        currentQuestions = [...(g.questions || [])];
+        renderGrantMgmtQuestions();
+        document.getElementById('grant-mgmt-submit').textContent = "Save Changes";
+        document.getElementById('grant-mgmt-cancel').classList.remove('hidden');
+        editIdx = idx;
+      };
+
+      document.getElementById('grant-mgmt-cancel').addEventListener('click', function() {
+        document.getElementById('grant-mgmt-form').reset();
+        currentQuestions = [];
+        renderGrantMgmtQuestions();
+        document.getElementById('grant-mgmt-submit').textContent = "Add Grant";
+        this.classList.add('hidden');
+        editIdx = null;
+      });
+    </script>
+
+    <div class="h-32"></div>
+
+    <!-- Collaborative Team Paper Editor (PDF-style) -->
+  <section id="team-editor" class="py-20 px-8 mx-auto relative z-10 max-w-7xl">
+    <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg" style="z-index:-1;">
+      <defs>
+        <pattern id="grid-team-editor" width="80" height="80" patternUnits="userSpaceOnUse">
+          <path d="M80 0 L0 0 0 80" class="stroke-line" />
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#grid-team-editor)" />
+    </svg>
+    <h2 class="text-3xl font-bold text-white mb-6">Collaborative Paper Editor</h2>
+    <div class="flex flex-col md:flex-row gap-8">
+      <div class="flex-1 flex flex-col">
+        <label class="block text-white mb-2">Paper Editor</label>
+        <div id="ace-editor" class="h-[700px] w-full glass rounded-xl holo-glow scanlines" style="min-height:700px; font-size:1.1rem;"></div>
+      </div>
+      <div class="flex-1 flex flex-col">
+        <label class="block text-white mb-2">PDF-style Preview</label>
+        <iframe id="pdf-preview" class="w-full glass rounded-xl holo-glow scanlines bg-white" style="min-height:700px; border:none; color: black;"></iframe>
+      </div>
+    </div>
+    <div class="flex flex-wrap gap-4 items-center mt-4">
+      <span class="text-cyan-100/80">Active Editors:</span>
+      <span id="team-active-users" class="flex gap-2"></span>
+    </div>
+    <div class="text-right mt-4">
+      <button id="team-save-paper" class="px-6 py-3 glass holo-glow rounded-lg border border-cyan-400/30 hover:border-cyan-300 transition">Save Paper</button>
+    </div>
+    <div id="team-save-status" class="text-green-400 mt-2 hidden">Saved!</div>
+  </section>
+  <!-- Ace Editor CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.3/ace.js"></script>
+  <!-- html2pdf CDN for PDF rendering -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script>
+    // --- Collaborative Team Editor Logic (Simulated) ---
+    // Simulate team members
+    const teamMembers = [
+      { name: "Dr. Jane Doe", color: "bg-cyan-700" },
+      { name: "Dr. Alan Turing", color: "bg-cyan-900" },
+      { name: "Dr. Lisa Su", color: "bg-cyan-800" }
+    ];
+    function renderActiveUsers() {
+      const el = document.getElementById('team-active-users');
+      el.innerHTML = '';
+      const n = Math.floor(Math.random() * teamMembers.length) + 1;
+      const shuffled = teamMembers.slice().sort(() => Math.random() - 0.5);
+      shuffled.slice(0, n).forEach(u => {
+        const span = document.createElement('span');
+        span.className = `inline-flex items-center px-2 py-1 rounded ${u.color} text-cyan-100 text-xs font-semibold`;
+        span.textContent = u.name;
+        el.appendChild(span);
+      });
+    }
+    renderActiveUsers();
+    setInterval(renderActiveUsers, 8000);
+
+    // Ace Editor setup
+    const paperKey = 'team-paper-content';
+    let aceEditor = ace.edit("ace-editor", {
+      mode: "ace/mode/markdown",
+      theme: "ace/theme/tomorrow_night_eighties",
+      fontSize: "1.1rem",
+      wrap: true,
+      showPrintMargin: false,
+      useWorker: false
+    });
+    aceEditor.setValue(localStorage.getItem(paperKey) || "# Collaborative Paper Title\n\nStart writing your paper here...", -1);
+
+    // PDF-style preview logic
+    function updatePdfPreview() {
+      const markdown = aceEditor.getValue();
+      // Convert markdown to HTML
+      const html = marked.parse(markdown);
+      // Create a styled HTML page for PDF preview
+      const pdfHtml = `
+        <html>
+        <head>
+          <style>
+            body { font-family: 'Georgia', serif; color: #222; margin: 40px; }
+            h1, h2, h3, h4 { color: #000; }
+            p { margin-bottom: 1em; }
+            table { border-collapse: collapse; width: 100%; }
+            th, td { border: 1px solid #bbb; padding: 6px 10px; }
+            code, pre { background: #f4f4f4; color: #333; }
+            .page-break { page-break-after: always; }
+          </style>
+        </head>
+        <body>
+          ${html}
+        </body>
+        </html>
+      `;
+      const iframe = document.getElementById('pdf-preview');
+      iframe.srcdoc = pdfHtml;
+    }
+    aceEditor.on('change', function() {
+      localStorage.setItem(paperKey, aceEditor.getValue());
+      updatePdfPreview();
+    });
+    updatePdfPreview();
+
+    // Save button
+   
+    document.getElementById('team-save-paper').addEventListener('click', () => {
+      localStorage.setItem(paperKey, aceEditor.getValue());
+      document.getElementById('team-save-status').classList.remove('hidden');
+      setTimeout(() => document.getElementById('team-save-status').classList.add('hidden'), 1200);
+    });
+
+    // Simulate real-time updates from other users (poll localStorage)
+    setInterval(() => {
+      const stored = localStorage.getItem(paperKey);
+      if (stored !== aceEditor.getValue()) {
+        aceEditor.setValue(stored, -1);
+        updatePdfPreview();
+      }
+    }, 2000);
+  </script>
+
+    <div class="h-32"></div>
+
+    <!-- 3D Knowledge Diffusion Map -->
+<section id="knowledge-diffusion-map" class="py-20 px-8 mx-auto relative z-10 max-w-full" style="min-height: 900px;">
+  <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg" style="position:absolute; z-index:-1;">
+    <defs>
+      <pattern id="grid-knowledge" width="80" height="80" patternUnits="userSpaceOnUse">
+        <path d="M80 0 L0 0 0 80" class="stroke-line" />
+      </pattern>
+    </defs>
+    <rect width="100%" height="100%" fill="url(#grid-knowledge)" />
+  </svg>
+
+  <h2 class="text-3xl font-bold text-white mb-6">Knowledge Diffusion Map</h2>
+  <div class="flex flex-col md:flex-row gap-8">
+    <div class="flex-1 relative" style="min-height: 700px;">
+      <div id="kdmap-container" class="glass rounded-2xl holo-glow scanlines" style="height: 700px; width: 100%;"></div>
+    </div>
+    <div id="kdmap-shoulder" class="glass rounded-2xl p-6 holo-glow scanlines" style="width: 380px; min-width: 320px; max-width: 420px; display: none; position: relative;">
+      <button id="kdmap-shoulder-close" class="absolute top-4 right-4 text-cyan-300 hover:text-cyan-100 text-xl">
+        <i class="fas fa-times"></i>
+      </button>
+      <div id="kdmap-shoulder-content"></div>
+    </div>
+  </div>
+
+  <div class="mt-6 flex flex-wrap gap-4 text-cyan-100/80 text-sm">
+    <span><span class="inline-block w-4 h-4 rounded-full bg-orange-400 mr-1"></span>Ongoing Experiment</span>
+    <span><span class="inline-block w-4 h-4 rounded-full bg-red-500 mr-1"></span>Statistically Insignificant</span>
+    <span><span class="inline-block w-4 h-4 rounded-full bg-green-400 mr-1"></span>Significant Result</span>
+    <span><span class="inline-block w-4 h-4 rounded-full bg-yellow-300 mr-1"></span>Needs Funding</span>
+    <span><span class="inline-block w-4 h-4 rounded-full bg-blue-400 mr-1"></span>AI: Needs More Research</span>
+  </div>
+</section>
+
+<!-- three.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.153.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+// --- 3D Knowledge Diffusion Map Logic ---
+
+const kdmapStatusColors = {
+  ongoing:       0xff9800,
+  insignificant: 0xff1744,
+  significant:   0x4caf50,
+  needs_funding: 0xffeb3b,
+  ai_gap:        0x2196f3
+};
+
+// Global holders
+let kdmapRenderer, kdmapScene, kdmapCamera, kdmapControls, kdmapRaycaster, kdmapMouse, kdmapPoints;
+let kdmapPointData = [];
+let kdmapHoveredIdx = null;
+
+// Generate experiments once
+function generateExperiments(n) {
+  const statuses = Object.keys(kdmapStatusColors);
+  const fields    = ['Physics','Biology','AI','Chemistry','Neuroscience','Energy'];
+  const leads     = ['Dr. Jane Doe','Dr. Alan Turing','Dr. Lisa Su','Dr. Smith','Dr. Patel','Dr. Wang'];
+  return Array.from({length: n}, (_, i) => {
+    const status = statuses[Math.floor(Math.random() * statuses.length)];
+    return {
+      id: i,
+      name: `Experiment #${i + 1}`,
+      status,
+      field: fields[Math.floor(Math.random()*fields.length)],
+      lead:  leads[Math.floor(Math.random()*leads.length)],
+      description: `Description for experiment #${i + 1}`,
+      x: (Math.random() - 0.5) * 200,
+      y: (Math.random() - 0.5) * 200,
+      z: (Math.random() - 0.5) * 200,
+      significance: Math.random() * 5,
+      funding: Math.floor(Math.random() * 200000) + 10000,
+      updated: new Date(Date.now() - Math.random()*1e10).toLocaleDateString(),
+      // optional parent for arrows
+      parent: Math.random() < 0.2 ? Math.floor(Math.random()*i) : null
+    };
+  });
+}
+
+const kdmapExperiments = generateExperiments(1200);
+
+// Initialize map
+function initKDMap() {
+  const container = document.getElementById('kdmap-container');
+  const W = container.clientWidth, H = container.clientHeight;
+
+  // Cleanup
+  if (kdmapRenderer) {
+    kdmapRenderer.dispose && kdmapRenderer.dispose();
+    container.innerHTML = '';
+  }
+
+  // Renderer & scene
+  kdmapRenderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
+  kdmapRenderer.setClearColor(0x000000,0);
+  kdmapRenderer.setSize(W,H);
+  kdmapRenderer.setPixelRatio(window.devicePixelRatio);
+  container.appendChild(kdmapRenderer.domElement);
+
+  kdmapScene = new THREE.Scene();
+  kdmapCamera = new THREE.PerspectiveCamera(60, W/H, 1, 2000);
+  kdmapCamera.position.set(0,0,400);
+
+  // Controls
+    let OrbitControls = window.THREE.OrbitControls || (window.THREE && window.THREE['OrbitControls']);
+  if (!OrbitControls && window.THREE && window.THREE['examples'] && window.THREE['examples']['OrbitControls']) {
+    OrbitControls = window.THREE['examples']['OrbitControls'];
+  }
+  if (!OrbitControls) {
+    // fallback: try global
+    OrbitControls = window.OrbitControls;
+  }
+  kdmapControls = OrbitControls
+    ? new OrbitControls(kdmapCamera, kdmapRenderer.domElement)
+    : (() => { console.warn('OrbitControls not found'); return { update(){} }; })();
+
+  kdmapControls.enableDamping = true;
+  kdmapControls.dampingFactor = 0.08;
+  kdmapControls.minDistance = 20;
+  kdmapControls.maxDistance = 1200;
+  kdmapControls.screenSpacePanning = true;
+  kdmapControls.zoomSpeed = 1.2;
+  kdmapControls.rotateSpeed = 1.1;
+
+  // Axes
+  kdmapScene.add(new THREE.AxesHelper(120));
+
+  // Build point cloud
+ 
+  const geom = new THREE.BufferGeometry();
+  const pos = new Float32Array(kdmapExperiments.length * 3);
+  const col = new Float32Array(kdmapExperiments.length * 3);
+  kdmapPointData = []; // reset
+
+  kdmapExperiments.forEach((exp, i) => {
+    pos[i*3]   = exp.x;
+    pos[i*3+1] = exp.y;
+    pos[i*3+2] = exp.z;
+    const c = new THREE.Color(kdmapStatusColors[exp.status]);
+    col[i*3]   = c.r;
+    col[i*3+1] = c.g;
+    col[i*3+2] = c.b;
+    kdmapPointData.push(exp);
+  });
+
+  geom.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geom.setAttribute('color',    new THREE.BufferAttribute(col, 3));
+
+  const mat = new THREE.PointsMaterial({
+    size: 6,
+    sizeAttenuation: true,
+    vertexColors: true,
+    alphaTest: 0.5
+  });
+
+  kdmapPoints = new THREE.Points(geom, mat);
+  kdmapScene.add(kdmapPoints);
+
+  // Draw dependency arrows
+  kdmapExperiments.forEach((exp, i) => {
+    if (typeof exp.parent === 'number' && kdmapExperiments[exp.parent]) {
+      // FIX: Properly construct from/to vectors
+      const parentExp = kdmapExperiments[exp.parent];
+      const from = new THREE.Vector3(parentExp.x, parentExp.y, parentExp.z);
+      const to   = new THREE.Vector3(exp.x, exp.y, exp.z);
+      const dir  = to.clone().sub(from).normalize();
+      const len  = from.distanceTo(to)*0.95;
+      kdmapScene.add(new THREE.ArrowHelper(dir, from, len, 0x00e5ff, 8, 4));
+    }
+  });
+
+  // Raycaster + mouse
+  kdmapRaycaster = new THREE.Raycaster();
+  kdmapMouse     = new THREE.Vector2();
+  kdmapRenderer.domElement.addEventListener('pointermove', kdmapPointerMoveHandler);
+  kdmapRenderer.domElement.addEventListener('pointerleave', hideKDMapShoulder);
+
+  // Zoom-to-fit button
+  if (!document.getElementById('kdmap-zoomfit-btn')) {
+    const btn = document.createElement('button');
+    btn.id = 'kdmap-zoomfit-btn';
+    btn.innerHTML = '<i class="fas fa-search-plus"></i> Zoom to Fit';
+    btn.className = 'absolute top-4 left-4 px-4 py-2 glass holo-glow rounded border border-cyan-400/30 text-white hover:border-cyan-300 transition z-20';
+    btn.onclick = kdmapZoomToFit;
+    container.appendChild(btn);
+  }
+
+  // Initial zoom-to-fit
+  setTimeout(kdmapZoomToFit, 100);
+
+  animateKDMap();
+}
+
+// Handle hover
+function kdmapPointerMoveHandler(evt) {
+  const rect = kdmapRenderer.domElement.getBoundingClientRect();
+  kdmapMouse.x = ((evt.clientX - rect.left)/rect.width)*2 - 1;
+  kdmapMouse.y = -((evt.clientY - rect.top)/rect.height)*2 + 1;
+  kdmapRaycaster.setFromCamera(kdmapMouse, kdmapCamera);
+  const hits = kdmapRaycaster.intersectObject(kdmapPoints);
+  if (hits.length) {
+    const idx = hits[0].index;
+    if (kdmapHoveredIdx !== idx) {
+      kdmapHoveredIdx = idx;
+      showKDMapShoulder(kdmapPointData[idx]);
+    }
+  } else {
+    hideKDMapShoulder();
+  }
+}
+
+function showKDMapShoulder(exp) {
+  const sh = document.getElementById('kdmap-shoulder');
+  const ct = document.getElementById('kdmap-shoulder-content');
+  ct.innerHTML = `
+    <div class="text-lg font-bold text-white mb-2">${exp.name}</div>
+    <div class="text-cyan-100/90 mb-2">${exp.description}</div>
+    <div class="mb-1"><span class="text-cyan-300">Field:</span> ${exp.field}</div>
+    <div class="mb-1"><span class="text-cyan-300">Lead:</span> ${exp.lead}</div>
+    <div class="mb-1"><span class="text-cyan-300">Status:</span> <span style="color:${kdmapStatusColorCss(exp.status)}">${exp.status.replace('_',' ')}</span></div>
+    <div class="mb-1"><span class="text-cyan-300">Significance:</span> ${exp.significance.toFixed(2)}</div>
+    <div class="mb-1"><span class="text-cyan-300">Funding:</span> $${exp.funding.toLocaleString()}</div>
+    <div class="mb-1"><span class="text-cyan-300">Updated:</span> ${exp.updated}</div>
+  `;
+  sh.style.display = 'block';
+}
+
+function hideKDMapShoulder() {
+  kdmapHoveredIdx = null;
+  document.getElementById('kdmap-shoulder').style.display = 'none';
+}
+document.getElementById('kdmap-shoulder-close').onclick = hideKDMapShoulder;
+
+function kdmapZoomToFit() {
+  let [minX,minY,minZ,maxX,maxY,maxZ] = [Infinity,Infinity,Infinity,-Infinity,-Infinity,-Infinity];
+  kdmapExperiments.forEach(e => {
+    minX=Math.min(minX,e.x); maxX=Math.max(maxX,e.x);
+    minY=Math.min(minY,e.y); maxY=Math.max(maxY,e.y);
+    minZ=Math.min(minZ,e.z); maxZ=Math.max(maxZ,e.z);
+  });
+  const cx = (minX+maxX)/2, cy = (minY+maxY)/2, cz = (minZ+maxZ)/2;
+  const size = Math.max(maxX-minX, maxY-minY, maxZ-minZ);
+  if (kdmapCamera.position) kdmapCamera.position.set(cx, cy, cz + size*1.2);
+  kdmapCamera.lookAt(cx, cy, cz);
+  if (kdmapControls.target) kdmapControls.target.set(cx, cy, cz);
+  kdmapControls.update();
+}
+
+function animateKDMap() {
+  requestAnimationFrame(animateKDMap);
+  kdmapControls.update();
+  kdmapRenderer.render(kdmapScene, kdmapCamera);
+}
+
+function kdmapStatusColorCss(status) {
+  const c = kdmapStatusColors[status] || 0xCCCCCC;
+  return '#' + c.toString(16).padStart(6,'0');
+}
+
+// Responsive
+window.addEventListener('resize', () => {
+  const ctr = document.getElementById('kdmap-container');
+  if (kdmapRenderer && kdmapCamera) {
+    const w = ctr.clientWidth, h = ctr.clientHeight;
+    kdmapRenderer.setSize(w,h);
+    kdmapCamera.aspect = w/h;
+    kdmapCamera.updateProjectionMatrix();
+  }
+});
+
+// Kickoff
+setTimeout(initKDMap, 400);
+</script>
+
+
+    <div class="h-32"></div>
+
+  <footer class="py-8 text-center glass mt-16 relative z-10 border-t border-cyan-500/10">
+    <p class="text-sm text-white">&copy; 2025 Atlantis. All rights reserved.</p>
+  </footer>
+
+</body>
+
+</html>

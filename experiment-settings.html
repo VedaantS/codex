@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Experiment Settings</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+  <script src="https://kit.fontawesome.com/dac0a9835a.js" crossorigin="anonymous"></script>
+  <style>
+    body { font-family: 'Space Grotesk', sans-serif; }
+    .glass { backdrop-filter: blur(14px) saturate(180%); background: rgba(10, 10, 30, 0.06); }
+    .holo-glow { box-shadow: 0 0 0.5px rgba(0,255,255,0.6), 0 0 8px rgba(0,255,255,0.2), 0 0 40px rgba(0,255,255,0.05); transition: box-shadow 0.4s ease-in-out; }
+    .holo-glow:hover { box-shadow: 0 0 1px rgba(0,255,255,0.9), 0 0 12px rgba(0,255,255,0.4), 0 0 60px rgba(0,255,255,0.1); }
+    .scanlines::before { content: ""; position: absolute; inset: 0;
+      background-image: repeating-linear-gradient(to bottom, rgba(255,255,255,0.02) 0px, transparent 1px, transparent 4px);
+      pointer-events: none; z-index: 10;
+    }
+  </style>
+</head>
+<body class="bg-black text-white antialiased min-h-screen flex items-center justify-center">
+  <nav class="fixed top-0 w-full flex justify-between items-center px-10 py-4 glass border-b border-cyan-500/10 z-50" style="z-index: 11;">
+    <a href="/" class="text-2xl font-bold tracking-wide text-cyan-300">atlantis [CODEX]</a>
+    <ul class="flex space-x-8 text-sm">
+      <li><a href="#" class="hover:text-cyan-400 transition">Home</a></li>
+      <li><a href="/kdmap.html" class="hover:text-cyan-400 transition">Frontier</a></li>
+      <li><a href="/chat.html" class="hover:text-cyan-400 transition">Chat</a></li>
+      <li><a href="/profile.html" class="hover:text-cyan-400 transition">Profile</a></li>
+    </ul>
+  </nav>
+
+  <div id="experiment-settings-content" class="w-full flex justify-center items-center">
+    <!-- Settings UI will be injected here -->
+  </div>
+  <template id="experiment-settings-template">
+    <!-- ...existing code from file3.html template... -->
+      <div class="glass rounded-2xl p-8 holo-glow scanlines max-w-2xl mx-auto my-12 relative z-10">
+        <h3 class="text-2xl font-bold text-cyan-200 mb-4">Experiment Settings</h3>
+        <div class="mb-6">
+          <label class="block text-cyan-200 font-semibold mb-2">Experiment Title</label>
+          <input type="text" class="w-full p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent" data-settings="title" />
+        </div>
+        <div class="mb-6">
+          <label class="block text-cyan-200 font-semibold mb-2">Protocol Version</label>
+          <div class="flex gap-2 items-center">
+            <select class="p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent" data-settings="version"></select>
+            <button class="px-3 py-1 glass rounded border border-cyan-400/20 text-cyan-200 hover:border-cyan-300 text-xs" data-settings="fork">Fork</button>
+            <span class="text-cyan-100/70 text-xs ml-2" data-settings="forked-from"></span>
+          </div>
+        </div>
+        <div class="mb-6">
+          <label class="block text-cyan-200 font-semibold mb-2">Collaborators</label>
+          <div class="flex flex-wrap gap-2 mb-2" data-settings="collaborators-list"></div>
+          <div class="flex gap-2">
+            <input type="text" class="flex-1 p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent" placeholder="Add collaborator (name or email)" data-settings="collab-input" />
+            <button class="px-3 py-1 glass rounded border border-cyan-400/20 text-cyan-200 hover:border-cyan-300 text-xs" data-settings="add-collab">Add</button>
+          </div>
+        </div>
+        <div class="mb-6">
+          <label class="block text-cyan-200 font-semibold mb-2">Integrity Layer</label>
+          <div class="mb-2 text-cyan-100/80 text-sm">Funders & Sources:</div>
+          <ul class="list-disc list-inside text-cyan-100/90 mb-2" data-settings="funders-list"></ul>
+          <div class="flex gap-2">
+            <input type="text" class="flex-1 p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent" placeholder="Add funder/source" data-settings="funder-input" />
+            <button class="px-3 py-1 glass rounded border border-cyan-400/20 text-cyan-200 hover:border-cyan-300 text-xs" data-settings="add-funder">Add</button>
+          </div>
+        </div>
+        <div class="mb-6">
+          <label class="block text-cyan-200 font-semibold mb-2">Visibility</label>
+          <select class="p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent" data-settings="visibility">
+            <option value="public">Public</option>
+            <option value="collaborators">Collaborators Only</option>
+            <option value="private">Private</option>
+          </select>
+        </div>
+        <div class="mb-6">
+          <label class="block text-cyan-200 font-semibold mb-2">Archive/Withdraw</label>
+          <button class="px-4 py-2 glass rounded border border-red-400/30 text-red-300 hover:border-red-300 text-sm" data-settings="archive">Archive Experiment</button>
+          <button class="ml-2 px-4 py-2 glass rounded border border-yellow-400/30 text-yellow-300 hover:border-yellow-300 text-sm" data-settings="withdraw">Withdraw Experiment</button>
+        </div>
+        <div class="text-right">
+          <button class="px-6 py-3 glass holo-glow rounded-lg border border-cyan-400/30 hover:border-cyan-300 transition" data-settings="save">Save Settings</button>
+        </div>
+      </div>
+    <!-- ...end template... -->
+  </template>
+  <script>
+    // --- Experiment Settings Logic (API-connected) ---
+    // Utility: get query param
+    function getQueryParam(name) {
+      const url = new URL(window.location.href);
+      return url.searchParams.get(name);
+    }
+    // Try to extract project_id from referrer if not present
+    function getExperimentId() {
+      let projectId = getQueryParam('project_id');
+      if (!projectId && document.referrer) {
+        try {
+          const refUrl = new URL(document.referrer);
+          if (refUrl.pathname.endsWith('experiment.html')) {
+            projectId = refUrl.searchParams.get('project_id');
+          }
+        } catch (e) {}
+      }
+      return projectId;
+    }
+    // Utility: get JWT token
+    function getToken() {
+      return localStorage.getItem('access_token');
+    }
+    // Helper: decode JWT to get user id
+    function getTokenUserId() {
+      const token = getToken();
+      if (!token) return null;
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return payload.sub || payload.identity || payload.user_id || payload.id;
+      } catch (e) { return null; }
+    }
+    // API helpers
+    async function apiGet(url) {
+      const r = await fetch(url, {headers: {'Authorization': 'Bearer ' + getToken()}});
+      if (!r.ok) throw new Error(await r.text());
+      return r.json();
+    }
+    async function apiPatch(url, data) {
+      const r = await fetch(url, {
+        method: 'PATCH',
+        headers: {'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+      });
+      if (!r.ok) throw new Error(await r.text());
+      return r.json();
+    }
+    async function apiPost(url, data) {
+      const r = await fetch(url, {
+        method: 'POST',
+        headers: {'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+      });
+      if (!r.ok) throw new Error(await r.text());
+      return r.json();
+    }
+    // Main loader
+    async function openExperimentSettings() {
+      const projectId = getExperimentId();
+      if (!projectId) { document.body.innerHTML = "No experiment/project id specified."; return; }
+      // Convert projectId to experimentId (assume 1:1 mapping)
+      let exp;
+      try {
+        exp = await apiGet(`/experiments/${projectId}`);
+      } catch (e) {
+        // Try to get project and map to experiment by title/owner_id
+        const proj = await apiGet(`/projects/${projectId}`);
+        const experiments = await apiGet(`/experiments`);
+        exp = experiments.find(e => e.title === proj.title && e.owner_id === proj.owner_id);
+        if (!exp) {
+          document.body.innerHTML = "Experiment not found for this project."; return;
+        }
+      }
+      const experimentId = exp.id;
+      // Load protocol versions
+      let versions = await apiGet(`/experiments/${experimentId}/versions`);
+      // Defensive: filter out versions without id or version_label
+      versions = versions.filter(v => v && v.id && v.version_label);
+      // Pick the latest version by created_at (fallback: last in array)
+      let currentVersion = null;
+      if (versions.length > 0) {
+        // Try to find the version with the latest created_at
+        currentVersion = versions.reduce((a, b) => {
+          if (!a.created_at) return b;
+          if (!b.created_at) return a;
+          return new Date(a.created_at) > new Date(b.created_at) ? a : b;
+        });
+      }
+      if (!currentVersion) {
+        document.body.innerHTML = "No protocol versions found for this experiment."; return;
+      }
+      let meta = currentVersion && currentVersion.metadata_ ? currentVersion.metadata_ : {};
+      let collaborators = meta.collaborators || [];
+      let funders = meta.funders || [];
+      // UI
+      const content = document.getElementById('experiment-settings-content');
+      const tpl = document.getElementById('experiment-settings-template');
+      content.innerHTML = '';
+      const node = document.importNode(tpl.content, true);
+      // Title
+      const titleInput = node.querySelector('[data-settings="title"]');
+      titleInput.value = exp.title;
+      // Versions
+      const versionSel = node.querySelector('[data-settings="version"]');
+      versions.forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v.id;
+        opt.textContent = `${v.version_label} (${(v.created_at||'').slice(0,10)})`;
+        versionSel.appendChild(opt);
+      });
+      versionSel.value = currentVersion.id;
+      // Forked from
+      const forkedFrom = versions.find(v => v.id === currentVersion.parent_version_id);
+      node.querySelector('[data-settings="forked-from"]').textContent = forkedFrom ? `Forked from ${forkedFrom.version_label}` : "";
+      // Fork button
+      node.querySelector('[data-settings="fork"]').onclick = async () => {
+        // If not owner, fork project (not just protocol version)
+        if (exp.owner_id !== getTokenUserId()) {
+          if (!confirm("You are not the owner. Forking will create a new project and experiment under your account. Continue?")) return;
+          try {
+            const res = await apiPost(`/projects/${projectId}/fork`, {});
+            alert("Forked! Redirecting to your new project...");
+            window.location.href = "experiment.html?project_id=" + res.id;
+            return;
+          } catch (e) {
+            alert("Fork failed: " + e.message);
+            return;
+          }
+        }
+        // Owner: fork protocol version as before
+        const newVer = prompt("Enter new version label (e.g. v1.2):", "");
+        if (newVer) {
+          await apiPost(`/experiments/${experimentId}/versions`, {
+            version_label: newVer,
+            parent_version_id: currentVersion.id,
+            metadata_: currentVersion.metadata_
+          });
+          openExperimentSettings();
+        }
+      };
+      // Version switch
+      versionSel.onchange = async () => {
+        const selectedVersion = versions.find(v => v.id === versionSel.value);
+        if (!selectedVersion) return;
+        currentVersion = selectedVersion;
+        meta = currentVersion && currentVersion.metadata_ ? currentVersion.metadata_ : {};
+        collaborators = meta.collaborators || [];
+        funders = meta.funders || [];
+        // Re-render UI for new version
+        openExperimentSettings();
+      };
+      // Collaborators
+      const collabList = node.querySelector('[data-settings="collaborators-list"]');
+      function renderCollabs() {
+        collabList.innerHTML = '';
+        collaborators.forEach((c, i) => {
+          const span = document.createElement('span');
+          span.className = "inline-flex items-center px-2 py-1 rounded bg-cyan-900 text-cyan-100 text-xs font-semibold";
+          span.textContent = c;
+          const rm = document.createElement('button');
+          rm.className = "ml-2 text-red-400 hover:text-red-300 text-xs";
+          rm.innerHTML = '<i class="fas fa-times"></i>';
+          rm.onclick = async () => {
+            collaborators.splice(i,1);
+            await saveMeta();
+            renderCollabs();
+          };
+          span.appendChild(rm);
+          collabList.appendChild(span);
+        });
+      }
+      async function saveMeta() {
+        meta.collaborators = collaborators;
+        meta.funders = funders;
+        await apiPatch(`/experiments/${experimentId}/versions/${currentVersion.id}`, {metadata_: meta});
+      }
+      renderCollabs();
+      node.querySelector('[data-settings="add-collab"]').onclick = async () => {
+        const input = node.querySelector('[data-settings="collab-input"]');
+        const val = input.value.trim();
+        if (val && !collaborators.includes(val)) {
+          collaborators.push(val);
+          input.value = '';
+          await saveMeta();
+          renderCollabs();
+        }
+      };
+      // Funders
+      const fundersList = node.querySelector('[data-settings="funders-list"]');
+      function renderFunders() {
+        fundersList.innerHTML = '';
+        funders.forEach((f, i) => {
+          const li = document.createElement('li');
+          li.textContent = f;
+          const rm = document.createElement('button');
+          rm.className = "ml-2 text-red-400 hover:text-red-300 text-xs";
+          rm.innerHTML = '<i class="fas fa-times"></i>';
+          rm.onclick = async () => {
+            funders.splice(i,1);
+            await saveMeta();
+            renderFunders();
+          };
+          li.appendChild(rm);
+          fundersList.appendChild(li);
+        });
+      }
+      node.querySelector('[data-settings="add-funder"]').onclick = async () => {
+        const input = node.querySelector('[data-settings="funder-input"]');
+        const val = input.value.trim();
+        if (val && !funders.includes(val)) {
+          funders.push(val);
+          input.value = '';
+          await saveMeta();
+          renderFunders();
+        }
+      };
+      renderFunders();
+      // Visibility
+      const visSel = node.querySelector('[data-settings="visibility"]');
+      visSel.value = exp.visibility === 'collaborators_only' ? 'collaborators' : exp.visibility;
+      // Archive/Withdraw (simulate: just alert)
+      node.querySelector('[data-settings="archive"]').onclick = async () => {
+        if (confirm("Archive this experiment?")) {
+          // Optionally PATCH experiment with a new status if supported
+          alert("Experiment archived (not implemented in backend)");
+        }
+      };
+      node.querySelector('[data-settings="withdraw"]').onclick = async () => {
+        if (confirm("Withdraw this experiment?")) {
+          alert("Experiment withdrawn (not implemented in backend)");
+        }
+      };
+      // Save
+      node.querySelector('[data-settings="save"]').onclick = async () => {
+        await apiPatch(`/experiments/${experimentId}`, {
+          title: titleInput.value,
+          visibility: visSel.value === 'collaborators' ? 'collaborators_only' : visSel.value
+        });
+        await saveMeta();
+        alert("Settings saved!");
+        window.location.href = "experiment.html?project_id=" + projectId;
+      };
+      content.appendChild(node);
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+      openExperimentSettings();
+    });
+  </script>
+</body>
+</html>

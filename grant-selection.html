@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grant Applicant Selection</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+  <script src="https://kit.fontawesome.com/dac0a9835a.js" crossorigin="anonymous"></script>
+  <style>
+    body { font-family: 'Space Grotesk', sans-serif; }
+    .stroke-line { stroke: rgba(0,255,255,0.15); stroke-width: 0.5px; }
+    .glass { backdrop-filter: blur(14px) saturate(180%); background: rgba(10, 10, 30, 0.06); }
+    .holo-glow { box-shadow: 0 0 0.5px rgba(0,255,255,0.6), 0 0 8px rgba(0,255,255,0.2), 0 0 40px rgba(0,255,255,0.05); transition: box-shadow 0.4s ease-in-out; }
+    .holo-glow:hover { box-shadow: 0 0 1px rgba(0,255,255,0.9), 0 0 12px rgba(0,255,255,0.4), 0 0 60px rgba(0,255,255,0.1); }
+    .scanlines::before { content: ""; position: absolute; inset: 0;
+      background-image: repeating-linear-gradient(to bottom, rgba(255,255,255,0.02) 0px, transparent 1px, transparent 4px);
+      pointer-events: none; z-index: 10;
+    }
+    .file-drop.dragover { background:rgba(10,10,30,0.6); }
+    .rating { display:flex; gap:.5rem; align-items:center; }
+    .rating input { accent-color:cyan; }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leader-line/1.0.7/leader-line.min.js"></script>
+</head>
+<body class="bg-black text-white antialiased overflow-x-hidden">
+  <nav class="fixed top-0 w-full flex justify-between items-center px-10 py-4 glass border-b border-cyan-500/10 z-50" style="z-index: 11;">
+    <a href="/" class="text-2xl font-bold tracking-wide text-cyan-300">atlantis [CODEX]</a>
+    <ul class="flex space-x-8 text-sm">
+      <li><a href="#" class="hover:text-cyan-400 transition">Home</a></li>
+      <li><a href="/kdmap.html" class="hover:text-cyan-400 transition">Frontier</a></li>
+      <li><a href="/chat.html" class="hover:text-cyan-400 transition">Chat</a></li>
+      <li><a href="/profile.html" class="hover:text-cyan-400 transition">Profile</a></li>
+    </ul>
+  </nav>
+  <section id="funder-applicant-selection" class="py-20 px-8 mx-auto relative z-10 max-w-5xl">
+    <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg" style="z-index:-1;">
+      <defs>
+        <pattern id="grid-funder-apps" width="80" height="80" patternUnits="userSpaceOnUse">
+          <path d="M80 0 L0 0 0 80" class="stroke-line" />
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#grid-funder-apps)" />
+    </svg>
+    <h2 class="text-3xl font-bold text-cyan-200 mb-6">Select Applicants for Grant</h2>
+    <div class="mb-6">
+      <label class="text-cyan-100/80 mr-2">Grant:</label>
+      <select id="funder-grant-select" class="p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent">
+        <!-- Options will be populated by JavaScript -->
+      </select>
+    </div>
+    <div id="funder-applicant-list" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <!-- Applicants will be rendered here -->
+    </div>
+  </section>
+  <div class="h-32"></div>
+  <footer class="py-8 text-center glass mt-16 relative z-10 border-t border-cyan-500/10">
+    <p class="text-sm text-cyan-200">&copy; 2025 Atlantis. All rights reserved.</p>
+  </footer>
+  <script>
+    // --- Dynamic Grant & Applicant Fetching ---
+    let grants = [];
+    let applicationsByGrant = {};
+    let projectsById = {};
+    let usersById = {};
+    const token = localStorage.getItem('access_token');
+
+    // Helper to decode JWT and get user id
+    function getUserIdFromToken(token) {
+      if (!token) return null;
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return payload.sub || payload.identity || payload.user_id || payload.id;
+      } catch (e) { return null; }
+    }
+
+    async function fetchGrantsAndApplications() {
+      if (!token) return;
+      const userId = getUserIdFromToken(token);
+      if (!userId) return;
+      // Fetch all grants
+      const grantsResp = await fetch('/grants', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      if (!grantsResp.ok) return;
+      let allGrants = await grantsResp.json();
+      // Only show grants created by this funder
+      grants = allGrants.filter(g => g.created_by_id === userId);
+      // Populate grant dropdown
+      const grantSelect = document.getElementById('funder-grant-select');
+      grantSelect.innerHTML = '';
+      grants.forEach(g => {
+        const opt = document.createElement('option');
+        opt.value = g.id;
+        opt.textContent = g.title;
+        grantSelect.appendChild(opt);
+      });
+      // Fetch all pending applications for these grants
+      applicationsByGrant = {};
+      for (const grant of grants) {
+        const resp = await fetch(`/grants/${grant.id}/applicants`, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!resp.ok) continue;
+        const apps = await resp.json();
+        // Only keep pending applications
+        const pending = apps.filter(a => a.status === 'pending');
+        applicationsByGrant[grant.id] = pending;
+        // Collect project and user IDs for later lookup
+        for (const app of pending) {
+          if (app.project_id) projectsById[app.project_id] = null;
+        }
+      }
+      // Fetch all needed projects
+      await fetchProjectsAndUsers();
+      // Initial render
+      renderApplicantList(grantSelect.value);
+    }
+
+    async function fetchProjectsAndUsers() {
+      // Fetch all projects in one go (could be optimized)
+      const projectIds = Object.keys(projectsById);
+      for (const pid of projectIds) {
+        if (!projectsById[pid]) {
+          const resp = await fetch(`/projects/${pid}`, {
+            headers: { 'Authorization': 'Bearer ' + token }
+          });
+          if (resp.ok) {
+            const proj = await resp.json();
+            projectsById[pid] = proj;
+            if (proj.owner_id) usersById[proj.owner_id] = null;
+          }
+        }
+      }
+      // Fetch all users (applicants) and cache their names
+      const userIds = Object.keys(usersById);
+      for (const uid of userIds) {
+        if (!usersById[uid]) {
+          try {
+            const resp = await fetch(`/users/${uid}`, {
+              headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (resp.ok) {
+              const user = await resp.json();
+              usersById[uid] = { id: user.id, name: user.name || user.email || uid };
+            } else {
+              usersById[uid] = { id: uid, name: uid };
+            }
+          } catch (e) {
+            usersById[uid] = { id: uid, name: uid };
+          }
+        }
+      }
+    }
+
+    function renderApplicantList(grantId) {
+      const container = document.getElementById('funder-applicant-list');
+      container.innerHTML = '';
+      const apps = applicationsByGrant[grantId] || [];
+      if (!apps.length) {
+        container.innerHTML = '<div class="text-cyan-200 col-span-2">No pending applications for this grant.</div>';
+        return;
+      }
+      // Sort by submitted_at desc
+      apps.sort((a, b) => new Date(b.submitted_at) - new Date(a.submitted_at));
+      for (const app of apps) {
+        const proj = projectsById[app.project_id] || {};
+        const user = usersById[proj.owner_id] || { id: proj.owner_id, name: proj.owner_id };
+        const answers = app.answers || {};
+        const div = document.createElement('div');
+        div.className = 'glass rounded-2xl p-6 holo-glow scanlines flex flex-col gap-2';
+        div.innerHTML = `
+          <div class="text-xl font-semibold text-cyan-100 mb-1">${proj.title || 'Untitled Project'}</div>
+          <div class="text-cyan-200 mb-1">Applicant: <span class="text-cyan-300">${user.name || user.id}</span></div>
+          <div class="flex gap-4 mb-1">
+            <div>Budget: <span class="text-cyan-300">$${proj.budget_requested ? Number(proj.budget_requested).toLocaleString() : '—'}</span></div>
+            <div>Reproducibility: <span class="text-cyan-200">${proj.reproducibility_score ?? '—'}</span></div>
+            <div>Impact: <span class="text-cyan-200">${proj.impact_score ?? '—'}</span></div>
+            <div>Difficulty: <span class="text-cyan-200">${proj.difficulty_score ?? '—'}</span></div>
+          </div>
+          <div class="mb-1">Submitted: <span class="text-cyan-400 font-bold">${app.submitted_at ? new Date(app.submitted_at).toLocaleString() : ''}</span></div>
+          <div class="mb-1"><span class="text-cyan-100/80">Application Answers:</span><br>${Object.entries(answers).map(([k,v]) => `<b>${k}:</b> ${v}`).join('<br>')}</div>
+          <div class="flex gap-2 mt-2">
+            <button class="px-4 py-2 glass holo-glow rounded border border-green-400/30 hover:border-green-300 transition text-green-200" data-action="accept">Select Applicant</button>
+            <button class="px-4 py-2 glass holo-glow rounded border border-red-400/30 hover:border-red-300 transition text-red-200" data-action="reject">Reject</button>
+          </div>
+        `;
+        // Add event listeners for accept/reject
+        div.querySelector('[data-action="accept"]').onclick = async function() {
+          await updateApplicationStatus(app.id, 'shortlisted');
+          // Remove from UI immediately
+          div.remove();
+        };
+        div.querySelector('[data-action="reject"]').onclick = async function() {
+          await updateApplicationStatus(app.id, 'rejected');
+          div.remove();
+        };
+        container.appendChild(div);
+      }
+    }
+
+    async function updateApplicationStatus(appId, status) {
+      await fetch(`/grant-applications/${appId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify({ status })
+      });
+    }
+
+    document.getElementById('funder-grant-select').addEventListener('change', function() {
+      renderApplicantList(this.value);
+    });
+
+    document.addEventListener('DOMContentLoaded', fetchGrantsAndApplications);
+
+    // Copilot button and logic for all textareas
+    function addCopilotToTextarea(textarea) {
+      if (!textarea) return;
+      // Avoid duplicate copilot
+      if (textarea.parentElement.querySelector('.copilot-btn')) return;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = '💡 Copilot';
+      btn.className = 'copilot-btn ml-2 px-3 py-1 rounded bg-cyan-800 text-cyan-100 text-xs hover:bg-cyan-700 transition';
+      btn.onclick = async function() {
+        btn.disabled = true;
+        btn.textContent = 'Thinking...';
+        const prompt = textarea.value || textarea.placeholder || 'Suggest content for this field.';
+        try {
+          const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer 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'
+            },
+            body: JSON.stringify({
+              model: 'gpt-3.5-turbo',
+              messages: [
+                { role: 'system', content: 'You are a helpful scientific writing assistant for grant applications and experiment documentation.' },
+                { role: 'user', content: prompt }
+              ]
+            })
+          });
+          const data = await resp.json();
+          const suggestion = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+          if (suggestion) textarea.value = suggestion.trim();
+          btn.textContent = '💡 Copilot';
+        } catch (e) {
+          btn.textContent = 'Try Again';
+        }
+        btn.disabled = false;
+      };
+      textarea.parentElement.appendChild(btn);
+    }
+    // Add copilots to all textareas on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('textarea').forEach(addCopilotToTextarea);
+    });
+  </script>
+</body>
+</html>

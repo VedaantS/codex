@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Labs | Atlantis Codex</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+  <script src="https://kit.fontawesome.com/dac0a9835a.js" crossorigin="anonymous"></script>
+  <style>
+    body { font-family: 'Space Grotesk', sans-serif; }
+    .glass { backdrop-filter: blur(14px) saturate(180%); background: rgba(10, 10, 30, 0.06); }
+    .holo-glow { box-shadow: 0 0 0.5px rgba(0,255,255,0.6), 0 0 8px rgba(0,255,255,0.2), 0 0 40px rgba(0,255,255,0.05); transition: box-shadow 0.4s ease-in-out; }
+    .holo-glow:hover { box-shadow: 0 0 1px rgba(0,255,255,0.9), 0 0 12px rgba(0,255,255,0.4), 0 0 60px rgba(0,255,255,0.1); }
+
+    /* Futuristic Bottom Navigation Bar */
+    .bottom-bar {
+      position: fixed;
+      left: 50%;
+      bottom: 30px;
+      transform: translateX(-50%);
+      z-index: 2000;
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      gap: 1.5rem;
+      background: rgba(10,20,40,0.7);
+      border-radius: 2rem 2rem 0 0;
+      padding: 1.5rem 2.5rem 1.2rem 2.5rem;
+      box-shadow: 0 0 24px 2px rgba(0,255,255,0.08);
+      border: 1.5px solid rgba(0,255,255,0.18);
+      pointer-events: auto;
+      min-width: 320px;
+      max-width: 900px;
+    }
+    .bottom-bar .sidebar-btn {
+      width: 48px; height: 48px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 50%;
+      background: rgba(0,255,255,0.08);
+      color: #67e8f9;
+      font-size: 1.5rem;
+      border: 1.5px solid transparent;
+      transition: background 0.2s, border 0.2s, color 0.2s;
+      cursor: pointer;
+    }
+    .bottom-bar .sidebar-btn.active, .bottom-bar .sidebar-btn:hover {
+      background: rgba(0,255,255,0.18);
+      color: #fff;
+      border-color: #22d3ee;
+    }
+    @media (max-width: 900px) {
+      .bottom-bar { min-width: 0; padding: 0.7rem 0.2rem 0.7rem 0.2rem; }
+      .bottom-bar .sidebar-btn { width: 38px; height: 38px; font-size: 1.1rem; }
+    }
+  </style>
+</head>
+<body class="bg-black text-white antialiased overflow-x-hidden">
+  <main style="min-height: 100vh; background: #000;">
+    <h1 class="text-3xl font-bold text-cyan-200 mb-6 text-center hidden" style="margin-top: 24px;">Labs</h1>
+    <div id="labs-list" class="max-w-3xl mx-auto hidden"></div>
+    <div class="text-center mt-8">
+      <a href="#" id="create-lab-btn" class="inline-block px-6 py-2 bg-cyan-700 text-white rounded holo-glow hidden">Create New Lab</a>
+    </div>
+
+    <!-- Futuristic Bottom Navigation Bar -->
+    <div class="bottom-bar">
+      <button id="discovery-tab" class="sidebar-btn active" title="Discovery Feed"><i class="fas fa-compass"></i></button>
+      <button id="labs-tab" class="sidebar-btn" title="Labs"><i class="fas fa-flask"></i></button>
+      <button id="profiles-tab" class="sidebar-btn" title="Profiles"><i class="fas fa-users"></i></button>
+    </div>
+
+    <!-- Add a container for profiles -->
+    <div id="profiles-list" class="max-w-3xl mx-auto hidden">
+      <h2 class="text-3xl font-bold text-cyan-200 mb-6 text-center">Profiles</h2>
+      <input type="text" id="profile-search" class="w-full px-4 py-2 mb-4 rounded" style="border-radius: 20px;" placeholder="Search profiles...">
+      <div id="recommended-profiles" class="mb-6">
+        <h3 class="text-xl font-bold text-cyan-300 mb-2">Recommended Profiles</h3>
+        <div id="recommended-feed" class="grid grid-cols-1 gap-4"></div>
+      </div>
+      <div id="search-results" class="grid grid-cols-1 gap-4"></div>
+    </div>
+
+    <!-- Add Global Discovery Feed section -->
+    <div id="discovery-feed-section" class="max-w-3xl mx-auto">
+      <h2 class="text-3xl font-bold text-cyan-200 mb-6 text-center">Global Discovery Feed</h2>
+      <div id="discovery-feed-viewport" class="relative mx-auto flex flex-col items-center justify-center" style="height: 80vh; max-width: 480px; overflow: hidden;">
+        <div id="discovery-feed-card-container" class="w-full h-full flex flex-col items-center justify-center"></div>
+        <div class="flex justify-between w-full absolute bottom-4 left-0 px-8 z-10">
+          <button id="discovery-prev-btn" class="px-4 py-2 bg-cyan-800/80 text-cyan-100 rounded-full shadow-lg hover:bg-cyan-600 transition disabled:opacity-40">&#8593; Prev</button>
+          <button id="discovery-next-btn" class="px-4 py-2 bg-cyan-800/80 text-cyan-100 rounded-full shadow-lg hover:bg-cyan-600 transition disabled:opacity-40">Next &#8595;</button>
+        </div>
+      </div>
+    </div>
+  </main>
+  <script>
+    async function fetchLabs() {
+      const res = await fetch('/labs-list', { headers: { 'Authorization': 'Bearer ' + (localStorage.access_token || '') }});
+      if (!res.ok) return;
+      const labs = await res.json();
+      const container = document.getElementById('labs-list');
+      container.innerHTML = labs.map(lab => `
+        <div class="glass rounded-lg p-6 mb-6 border border-cyan-500/10">
+          <h2 class="text-xl font-bold text-cyan-300 mb-2">${lab.name}</h2>
+          <div class="text-cyan-100 mb-1">${lab.affiliation || ''}</div>
+          <div class="mb-2 text-cyan-200">${lab.description || ''}</div>
+          <a href="/lab.html?id=${lab.id}" class="text-cyan-400 underline">View Lab</a>
+        </div>
+      `).join('');
+    }
+    fetchLabs();
+    document.getElementById('create-lab-btn').onclick = function() {
+      window.location = '/lab.html?create=1';
+    }
+
+    // --- Tab switching logic for new bottom bar ---
+    function setActiveTab(tab) {
+      document.getElementById('discovery-tab').classList.remove('active');
+      document.getElementById('labs-tab').classList.remove('active');
+      document.getElementById('profiles-tab').classList.remove('active');
+      tab.classList.add('active');
+    }
+    document.getElementById('labs-tab').onclick = function() {
+      setActiveTab(this);
+      document.getElementById('labs-list').classList.remove('hidden');
+      document.getElementById('profiles-list').classList.add('hidden');
+      document.getElementById('discovery-feed-section').classList.add('hidden');
+      document.querySelector('h1.text-3xl').classList.remove('hidden');
+      document.getElementById('create-lab-btn').classList.remove('hidden');
+    };
+    document.getElementById('profiles-tab').onclick = function() {
+      setActiveTab(this);
+      document.getElementById('labs-list').classList.add('hidden');
+      document.getElementById('profiles-list').classList.remove('hidden');
+      document.getElementById('discovery-feed-section').classList.add('hidden');
+      document.querySelector('h1.text-3xl').classList.add('hidden');
+      document.getElementById('create-lab-btn').classList.add('hidden');
+    };
+    document.getElementById('discovery-tab').onclick = function() {
+      setActiveTab(this);
+      document.getElementById('labs-list').classList.add('hidden');
+      document.getElementById('profiles-list').classList.add('hidden');
+      document.getElementById('discovery-feed-section').classList.remove('hidden');
+      document.querySelector('h1.text-3xl').classList.add('hidden');
+      document.getElementById('create-lab-btn').classList.add('hidden');
+      if (typeof renderDiscoveryFeed === 'function') renderDiscoveryFeed();
+    };
+    // On page load, set Discovery as active
+    window.addEventListener('DOMContentLoaded', function() {
+      setActiveTab(document.getElementById('discovery-tab'));
+      document.getElementById('labs-list').classList.add('hidden');
+      document.getElementById('profiles-list').classList.add('hidden');
+      document.getElementById('discovery-feed-section').classList.remove('hidden');
+      document.querySelector('h1.text-3xl').classList.add('hidden');
+      document.getElementById('create-lab-btn').classList.add('hidden');
+      // Render the discovery feed immediately
+      if (typeof renderDiscoveryFeed === 'function') renderDiscoveryFeed();
+    });
+
+    // Update Global Discovery Feed section for TikTok-style single-card scroll
+    const discoverySection = document.getElementById('discovery-feed-section');
+    discoverySection.innerHTML = `
+      <h2 class="text-3xl font-bold text-cyan-200 mb-6 text-center">Global Discovery Feed</h2>
+      <div id="discovery-feed-viewport" class="relative mx-auto flex flex-col items-center justify-center" style="height: 80vh; max-width: 480px; overflow: hidden;">
+        <div id="discovery-feed-card-container" class="w-full h-full flex flex-col items-center justify-center"></div>
+        <div class="flex justify-between w-full absolute bottom-4 left-0 px-8 z-10">
+          <button id="discovery-prev-btn" class="px-4 py-2 bg-cyan-800/80 text-cyan-100 rounded-full shadow-lg hover:bg-cyan-600 transition disabled:opacity-40">&#8593; Prev</button>
+          <button id="discovery-next-btn" class="px-4 py-2 bg-cyan-800/80 text-cyan-100 rounded-full shadow-lg hover:bg-cyan-600 transition disabled:opacity-40">Next &#8595;</button>
+        </div>
+      </div>
+    `;
+
+    // --- Global Discovery Feed Logic (API-connected & Personalized, TikTok style, one card at a time) ---
+    let discoveryFeedItems = [];
+    let discoveryFeedIndex = 0;
+    let discoveryAuthorNameMap = {};
+    async function renderDiscoveryFeed() {
+      const cardContainer = document.getElementById('discovery-feed-card-container');
+      cardContainer.innerHTML = '<div class="text-cyan-200 text-center w-full h-full flex items-center justify-center">Loading personalized feed...</div>';
+      const token = localStorage.getItem('access_token');
+      if (!token) return;
+      // Fetch user profile for personalization
+      let userProfile = null;
+      try {
+        const userId = (function parseJwt(token) { try { return JSON.parse(atob(token.split('.')[1])).sub; } catch (e) { return null; } })(token);
+        if (userId) {
+          const res = await fetch(`/profiles/${userId}`);
+          if (res.ok) userProfile = await res.json();
+        }
+      } catch (e) {}
+      // Fetch all projects (for experiments)
+      let projects = [];
+      try {
+        const res = await fetch('/projects', { headers: { 'Authorization': 'Bearer ' + token } });
+        if (res.ok) projects = await res.json();
+      } catch (e) {}
+      // Fetch all experiments
+      let experiments = [];
+      try {
+        const res = await fetch('/experiments', { headers: { 'Authorization': 'Bearer ' + token } });
+        if (res.ok) experiments = await res.json();
+      } catch (e) {}
+      // Personalization: filter/sort by user expertise/interests if available
+      let tags = (userProfile && userProfile.expertise_tags) ? userProfile.expertise_tags.map(t => t.toLowerCase()) : [];
+      // Join projects and experiments by title/owner_id
+      let feedItems = projects.map(p => {
+        const exp = experiments.find(e => e.title === p.title && e.owner_id === p.owner_id);
+        return { project: p, experiment: exp };
+      }).filter(item => {
+        if (!item.experiment) return false;
+        if (item.experiment.visibility !== 'public') return false;
+        return true;
+      });
+      // If user has tags, boost/sort by tag match in experiment/project title/desc
+      if (tags.length) {
+        feedItems.forEach(item => {
+          const text = ((item.experiment && item.experiment.title) || '') + ' ' + ((item.experiment && item.experiment.description) || '') + ' ' + ((item.project && item.project.title) || '') + ' ' + ((item.project && item.project.description) || '');
+          item.tagScore = tags.reduce((acc, tag) => acc + (text.toLowerCase().includes(tag) ? 1 : 0), 0);
+        });
+        feedItems.sort((a, b) => (b.tagScore - a.tagScore));
+      }
+      // --- Batch fetch all unique author IDs and resolve names ---
+      const authorIds = Array.from(new Set(feedItems.map(item => (item.experiment && item.experiment.owner_id) || (item.project && item.project.owner_id)).filter(Boolean)));
+      discoveryAuthorNameMap = {};
+      await Promise.all(authorIds.map(async (authorId) => {
+        try {
+          const res = await fetch(`/users/${authorId}`, { headers: { 'Authorization': 'Bearer ' + token } });
+          if (res.ok) {
+            const user = await res.json();
+            discoveryAuthorNameMap[authorId] = user.name || authorId;
+          }
+        } catch (e) {}
+      }));
+      discoveryFeedItems = feedItems.slice(0, 24); // up to 24 for now
+      discoveryFeedIndex = 0;
+      renderDiscoveryFeedCard();
+    }
+    function renderDiscoveryFeedCard() {
+      const cardContainer = document.getElementById('discovery-feed-card-container');
+      cardContainer.innerHTML = '';
+      if (!discoveryFeedItems.length) {
+        cardContainer.innerHTML = '<div class="text-cyan-200 text-center w-full h-full flex items-center justify-center">No experiments found for your feed.</div>';
+        document.getElementById('discovery-prev-btn').disabled = true;
+        document.getElementById('discovery-next-btn').disabled = true;
+        return;
+      }
+      const item = discoveryFeedItems[discoveryFeedIndex];
+      // Helper to truncate and expand text
+      function createExpandableText(text, maxLen, className) {
+        if (!text || text.length <= maxLen) {
+          return `<span class="${className}">${text}</span>`;
+        }
+        const short = text.slice(0, maxLen) + '...';
+        const id = 'exp-' + Math.random().toString(36).substr(2, 8);
+        return `
+          <span class="${className}" id="${id}-short">${short} <a href="#" class="text-cyan-300 underline" onclick="document.getElementById('${id}-full').style.display='inline';document.getElementById('${id}-short').style.display='none';return false;">Show more</a></span>
+          <span class="${className}" id="${id}-full" style="display:none;">${text} <a href="#" class="text-cyan-300 underline" onclick="document.getElementById('${id}-full').style.display='none';document.getElementById('${id}-short').style.display='inline';return false;">Show less</a></span>
+        `;
+      }
+      let authorId = item.experiment && item.experiment.owner_id ? item.experiment.owner_id : (item.project ? item.project.owner_id : null);
+      let authorName = discoveryAuthorNameMap[authorId] || authorId || 'Unknown';
+      const descHtml = createExpandableText(item.experiment && item.experiment.description ? item.experiment.description : '', 180, 'text-cyan-200 text-base mb-2');
+      const div = document.createElement('div');
+      div.className = "glass rounded-2xl p-8 holo-glow scanlines flex flex-col gap-4 items-center justify-center mx-auto my-8";
+      div.style = "min-height: 70vh; max-width: 480px; width: 100%; margin: 0 auto; display: flex; align-items: center; justify-content: center;";
+      div.innerHTML = `
+        <div class="text-cyan-300 font-bold text-2xl mb-2 text-center">${item.experiment && item.experiment.title ? item.experiment.title : (item.project && item.project.title ? item.project.title : 'Untitled')}</div>
+        <div class="text-cyan-400 text-sm mb-2 text-center">by ${authorName}</div>
+        ${descHtml}
+        <button class="mt-4 px-6 py-3 glass holo-glow rounded-lg border border-cyan-400/30 hover:border-cyan-300 transition text-cyan-200 text-base" onclick="window.location.href='experiment.html?project_id=${item.project.id}'">View Experiment</button>
+      `;
+      cardContainer.appendChild(div);
+      // Update button states
+      document.getElementById('discovery-prev-btn').disabled = (discoveryFeedIndex === 0);
+      document.getElementById('discovery-next-btn').disabled = (discoveryFeedIndex === discoveryFeedItems.length - 1);
+    }
+    // Button handlers
+    if (!window.discoveryFeedNavSetup) {
+      document.addEventListener('click', function(e) {
+        if (e.target && e.target.id === 'discovery-next-btn') {
+          if (discoveryFeedIndex < discoveryFeedItems.length - 1) {
+            discoveryFeedIndex++;
+            renderDiscoveryFeedCard();
+          }
+        } else if (e.target && e.target.id === 'discovery-prev-btn') {
+          if (discoveryFeedIndex > 0) {
+            discoveryFeedIndex--;
+            renderDiscoveryFeedCard();
+          }
+        }
+      });
+      window.discoveryFeedNavSetup = true;
+    }
+    // Render feed when Discovery tab is clicked
+    if (document.getElementById('discovery-tab')) {
+      document.getElementById('discovery-tab').addEventListener('click', renderDiscoveryFeed);
+    }
+
+    // Fetch recommended profiles on load
+    async function fetchRecommendedProfiles() {
+      const res = await fetch('/users', { headers: { 'Authorization': 'Bearer ' + (localStorage.access_token || '') }});
+      if (!res.ok) return;
+      const users = await res.json();
+      // Use string comparison for user id, fallback to empty string if not set
+      const currentUserId = (localStorage.user_id || '').toString();
+      const recommendedProfiles = users.filter(user => (user.id || '').toString() !== currentUserId);
+      const container = document.getElementById('recommended-feed');
+      container.innerHTML = recommendedProfiles.map(profile => `
+        <div class="glass rounded-lg p-6 mb-6 border border-cyan-500/10">
+          <h2 class="text-xl font-bold text-cyan-300 mb-2">${profile.name}</h2>
+          <div class="text-cyan-100 mb-1">${profile.role || ''}</div>
+          <div class="mb-2 text-cyan-200">${profile.email || ''}</div>
+          <a href="/profile.html?id=${profile.id}" class="text-cyan-400 underline">View Profile</a>
+        </div>
+      `).join('');
+    }
+
+    fetchRecommendedProfiles();
+
+    // Fix search bar color
+    document.getElementById('profile-search').classList.add('bg-gray-900','text-cyan-100','placeholder-cyan-400','border','border-cyan-700','focus:outline-none','focus:ring-2','focus:ring-cyan-500');
+
+    // Search profiles using the /users endpoint, filter client-side by name or email
+    document.getElementById('profile-search').oninput = async function() {
+      const query = this.value.toLowerCase();
+      const container = document.getElementById('recommended-feed');
+      container.innerHTML = '';
+      const res = await fetch('/users', { headers: { 'Authorization': 'Bearer ' + (localStorage.access_token || '') }});
+      if (!res.ok) return;
+      const users = await res.json();
+      const currentUserId = (localStorage.user_id || '').toString();
+      let filtered;
+      if (!query) {
+        filtered = users.filter(profile => (profile.id || '').toString() !== currentUserId);
+      } else {
+        filtered = users.filter(profile =>
+          (profile.id || '').toString() !== currentUserId && (
+            (profile.name && profile.name.toLowerCase().includes(query)) ||
+            (profile.email && profile.email.toLowerCase().includes(query))
+          )
+        );
+      }
+      container.innerHTML = filtered.map(profile => `
+        <div class="glass rounded-lg p-6 mb-6 border border-cyan-500/10">
+          <h2 class="text-xl font-bold text-cyan-300 mb-2">${profile.name}</h2>
+          <div class="text-cyan-100 mb-1">${profile.role || ''}</div>
+          <div class="mb-2 text-cyan-200">${profile.email || ''}</div>
+          <a href="/profile.html?id=${profile.id}" class="text-cyan-400 underline">View Profile</a>
+        </div>
+      `).join('');
+    };
+  </script>
+</body>
+</html>

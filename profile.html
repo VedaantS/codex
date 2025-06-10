@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Profile Settings | Atlantis [CODEX]</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+  <script src="https://kit.fontawesome.com/dac0a9835a.js" crossorigin="anonymous"></script>
+  <style>
+    body { font-family: 'Space Grotesk', sans-serif; }
+    .glass { backdrop-filter: blur(14px) saturate(180%); background: rgba(10, 10, 30, 0.06); }
+    .holo-glow { box-shadow: 0 0 0.5px rgba(0,255,255,0.6), 0 0 8px rgba(0,255,255,0.2), 0 0 40px rgba(0,255,255,0.05); transition: box-shadow 0.4s ease-in-out; }
+    .holo-glow:hover { box-shadow: 0 0 1px rgba(0,255,255,0.9), 0 0 12px rgba(0,255,255,0.4), 0 0 60px rgba(0,255,255,0.1); }
+    .scanlines::before { content: ""; position: absolute; inset: 0;
+      background-image: repeating-linear-gradient(to bottom, rgba(255,255,255,0.02) 0px, transparent 1px, transparent 4px);
+      pointer-events: none; z-index: 10;
+    }
+    /* Overlay for edit mode */
+    #editOverlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(10, 20, 40, 0.75);
+      z-index: 100;
+      transition: opacity 0.3s;
+      pointer-events: auto;
+      opacity: 1;
+      display: none;
+    }
+    #editOverlay.active {
+      display: block;
+    }
+    #profileCard.editing {
+      z-index: 101;
+      position: relative;
+      box-shadow: 0 0 0 4px rgba(0,255,255,0.2);
+    }
+  </style>
+</head>
+<body class="bg-black text-white antialiased min-h-screen flex flex-col items-center justify-start">
+  <div id="editOverlay"></div>
+  <div class="w-full flex flex-col items-center pt-8 pb-16 min-h-screen" style="padding-left: 50px; padding-right: 50px;">
+    <div id="profileCard" class="glass rounded-2xl p-10 holo-glow scanlines w-full max-w-4xl mx-auto mb-10 flex flex-col md:flex-row gap-8 items-center justify-between">
+      <div class="flex-1 flex flex-col gap-2 min-w-0">
+        <div class="flex items-center gap-4 mb-2">
+          <div id="avatar" class="w-20 h-20 rounded-full bg-cyan-900 flex items-center justify-center text-3xl font-bold text-cyan-200"></div>
+          <div>
+            <h1 id="profileName" class="text-3xl font-bold text-cyan-100 mb-1 truncate"></h1>
+            <div id="profileRole" class="text-cyan-300 text-lg font-semibold"></div>
+            <div id="profileAffiliation" class="text-cyan-200 text-base"></div>
+          </div>
+        </div>
+        <div id="profileBio" class="text-cyan-100 text-lg mb-2"></div>
+        <div id="profileTags" class="flex flex-wrap gap-2 mt-2"></div>
+      </div>
+    </div>
+    <div id="experimentsSection" class="w-full max-w-6xl mx-auto">
+      <h3 class="text-2xl font-bold text-cyan-200 mb-6">Experiments</h3>
+      <div id="experimentsList" class="grid grid-cols-1 md:grid-cols-2 gap-8"></div>
+    </div>
+    <div id="profileMsg" class="text-cyan-300 mt-4 text-center"></div>
+  </div>
+  <script>
+    function parseJwt(token) {
+      try { return JSON.parse(atob(token.split('.')[1])); } catch (e) { return {}; }
+    }
+    function logout() {
+      localStorage.removeItem('access_token');
+      window.location.href = '/login';
+    }
+    async function loadProfile() {
+      const token = localStorage.getItem('access_token');
+      const userId = new URLSearchParams(window.location.search).get('user_id');
+      const isSelf = userId === null || (token && userId === parseJwt(token).sub);
+      let uid = userId;
+      if (isSelf) {
+        if (!token) { window.location.href = '/login'; return; }
+        uid = parseJwt(token).sub;
+      }
+      // Fetch user info
+      let user = null;
+      try {
+        const userRes = await fetch('/users/' + uid, token ? { headers: { 'Authorization': 'Bearer ' + token } } : {});
+        if (userRes.ok) user = await userRes.json();
+      } catch (e) {}
+      // Fetch profile info
+      let prof = null;
+      try {
+        const profRes = await fetch('/profiles/' + uid);
+        if (profRes.ok) prof = await profRes.json();
+      } catch (e) {}
+      // Render profile card
+      if (user) {
+        document.getElementById('profileName').textContent = user.name || user.email || '';
+        document.getElementById('avatar').textContent = (user.name || user.email || '?')[0].toUpperCase();
+        document.getElementById('profileRole').textContent = user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : '';
+      }
+      if (prof) {
+        document.getElementById('profileBio').textContent = prof.bio || '';
+        document.getElementById('profileAffiliation').textContent = prof.affiliation || '';
+        const tags = (prof.expertise_tags || []);
+        const tagsEl = document.getElementById('profileTags');
+        tagsEl.innerHTML = '';
+        tags.forEach(tag => {
+          const chip = document.createElement('span');
+          chip.className = 'inline-block px-3 py-1 rounded-full bg-cyan-800 text-cyan-100 text-xs font-semibold';
+          chip.textContent = tag;
+          tagsEl.appendChild(chip);
+        });
+      }
+      // If self, show edit button and enable editing
+      if (isSelf) {
+        addProfileEditUI(prof, uid, token);
+      }
+      // Fetch and render experiments or grants
+      if (user && user.role === 'funder') {
+        // Show grants for funders
+        try {
+          const grantsRes = await fetch('/grants', token ? { headers: { 'Authorization': 'Bearer ' + token } } : {});
+          if (grantsRes.ok) {
+            const grants = await grantsRes.json();
+            const grantsList = document.getElementById('experimentsList');
+            grantsList.innerHTML = '';
+            const userGrants = grants.filter(g => g.created_by_id === uid);
+            if (userGrants.length === 0) {
+              grantsList.innerHTML = '<div class="text-cyan-400 col-span-2">No grants found.</div>';
+            } else {
+              userGrants.forEach(grant => {
+                const grantItem = document.createElement('div');
+                grantItem.className = 'glass rounded-xl p-7 holo-glow flex flex-col gap-2 border border-cyan-400/20 bg-black/40 shadow-lg';
+                grantItem.innerHTML = `
+                  <div class="flex items-center gap-3 mb-2">
+                    <div class="w-12 h-12 rounded-full bg-cyan-900 flex items-center justify-center text-xl font-bold text-cyan-200">G</div>
+                    <div>
+                      <h4 class="font-semibold text-cyan-200 text-xl mb-1 truncate">${grant.title}</h4>
+                      <div class="text-cyan-300 text-sm">${grant.created_at ? (new Date(grant.created_at).toLocaleDateString()) : ''}</div>
+                    </div>
+                  </div>
+                  <div class="text-cyan-100 text-base mb-2 line-clamp-4">${grant.description || ''}</div>
+                  <div class="flex gap-4 mt-auto">
+                    <a href="/grant-management.html?id=${grant.id}" class="text-cyan-300 hover:underline font-semibold">View Grant</a>
+                  </div>
+                `;
+                grantsList.appendChild(grantItem);
+              });
+            }
+          }
+        } catch (e) {
+          document.getElementById('profileMsg').innerText = 'Error loading grants.';
+        }
+      } else {
+        // Show experiments for non-funders
+        try {
+          const experimentsRes = await fetch('/experiments?user_id=' + uid);
+          if (experimentsRes.ok) {
+            const experiments = await experimentsRes.json();
+            const experimentsList = document.getElementById('experimentsList');
+            experimentsList.innerHTML = '';
+            if (experiments.length === 0) {
+              experimentsList.innerHTML = '<div class="text-cyan-400 col-span-2">No experiments found.</div>';
+            } else {
+              experiments.forEach(exp => {
+                const expItem = document.createElement('div');
+                expItem.className = 'glass rounded-xl p-7 holo-glow flex flex-col gap-2 border border-cyan-400/20 bg-black/40 shadow-lg';
+                expItem.innerHTML = `
+                  <div class="flex items-center gap-3 mb-2">
+                    <div class="w-12 h-12 rounded-full bg-cyan-900 flex items-center justify-center text-xl font-bold text-cyan-200">${(user && user.name ? user.name[0] : '?')}</div>
+                    <div>
+                      <h4 class="font-semibold text-cyan-200 text-xl mb-1 truncate">${exp.title}</h4>
+                      <div class="text-cyan-300 text-sm">${exp.created_at ? (new Date(exp.created_at).toLocaleDateString()) : ''}</div>
+                    </div>
+                  </div>
+                  <div class="text-cyan-100 text-base mb-2 line-clamp-4">${exp.description || ''}</div>
+                  <div class="flex gap-4 mt-auto">
+                    <a href="/experiment.html?id=${exp.id}" class="text-cyan-300 hover:underline font-semibold">View Experiment</a>
+                  </div>
+                `;
+                experimentsList.appendChild(expItem);
+              });
+            }
+          }
+        } catch (e) {
+          document.getElementById('profileMsg').innerText = 'Error loading experiments.';
+        }
+      }
+      // Update section title based on user role
+      const sectionTitle = document.querySelector('#experimentsSection h3');
+      if (user && user.role === 'funder') {
+        sectionTitle.textContent = 'Grants';
+      } else {
+        sectionTitle.textContent = 'Experiments';
+      }
+    }
+    // Add profile edit UI for self
+    function addProfileEditUI(prof, uid, token) {
+      const card = document.getElementById('profileCard');
+      // Add edit button
+      let editBtn = document.getElementById('editProfileBtn');
+      if (!editBtn) {
+        editBtn = document.createElement('button');
+        editBtn.id = 'editProfileBtn';
+        editBtn.className = 'mt-4 px-5 py-2 rounded glass holo-glow border border-cyan-400/30 hover:border-cyan-300 transition text-cyan-200 self-end';
+        editBtn.textContent = 'Edit Profile';
+        card.appendChild(editBtn);
+      }
+      editBtn.onclick = function() {
+        // Activate overlay and editing state
+        document.getElementById('editOverlay').classList.add('active');
+        card.classList.add('editing');
+        // Hide the profile card content (except the edit form)
+        card.style.visibility = 'hidden';
+        showProfileEditForm(prof, uid, token);
+      };
+    }
+    function showProfileEditForm(prof, uid, token) {
+      const card = document.getElementById('profileCard');
+      // Remove edit button
+      const editBtn = document.getElementById('editProfileBtn');
+      if (editBtn) editBtn.remove();
+      // Replace profile fields with form
+      card.innerHTML = `
+        <form id="profileEditForm" class="w-full mt-6 flex flex-col gap-4 z-50 relative">
+          <label class="text-cyan-200 font-semibold">Bio
+            <textarea id="editBio" class="w-full p-3 rounded bg-black/40 border border-cyan-400/20 text-cyan-100 focus:outline-none focus:border-cyan-300" rows="3">${prof && prof.bio ? prof.bio : ''}</textarea>
+          </label>
+          <label class="text-cyan-200 font-semibold">Affiliation
+            <input id="editAffiliation" type="text" class="w-full p-3 rounded bg-black/40 border border-cyan-400/20 text-cyan-100 focus:outline-none focus:border-cyan-300" value="${prof && prof.affiliation ? prof.affiliation : ''}" />
+          </label>
+          <label class="text-cyan-200 font-semibold">Expertise Tags (comma separated)
+            <input id="editTags" type="text" class="w-full p-3 rounded bg-black/40 border border-cyan-400/20 text-cyan-100 focus:outline-none focus:border-cyan-300" value="${prof && prof.expertise_tags ? prof.expertise_tags.join(', ') : ''}" />
+          </label>
+          <div class="flex gap-4 mt-2">
+            <button type="submit" class="px-6 py-2 rounded glass holo-glow border border-cyan-400/30 hover:border-cyan-300 transition text-cyan-200">Save</button>
+            <button type="button" id="cancelEditBtn" class="px-6 py-2 rounded glass border border-cyan-400/20 text-cyan-200">Cancel</button>
+          </div>
+        </form>
+      `;
+      card.style.visibility = 'visible';
+      document.getElementById('cancelEditBtn').onclick = function() {
+        // Deactivate overlay and editing state
+        document.getElementById('editOverlay').classList.remove('active');
+        document.getElementById('profileCard').classList.remove('editing');
+        document.getElementById('profileCard').style.visibility = 'visible';
+        window.location.reload();
+      };
+      document.getElementById('profileEditForm').onsubmit = async function(e) {
+        e.preventDefault();
+        const bio = document.getElementById('editBio').value;
+        const affiliation = document.getElementById('editAffiliation').value;
+        const tags = document.getElementById('editTags').value.split(',').map(t => t.trim()).filter(Boolean);
+        const res = await fetch('/profiles/' + uid, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ bio, affiliation, expertise_tags: tags })
+        });
+        if (res.ok) {
+          // Deactivate overlay and editing state
+          document.getElementById('editOverlay').classList.remove('active');
+          document.getElementById('profileCard').classList.remove('editing');
+          document.getElementById('profileCard').style.visibility = 'visible';
+          window.location.reload();
+        } else {
+          alert('Failed to update profile.');
+        }
+      };
+    }
+    window.onload = loadProfile;
+  </script>
+</body>
+</html>

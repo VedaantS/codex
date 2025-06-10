@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Knowledge Diffusion Map</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+  <script src="https://kit.fontawesome.com/dac0a9835a.js" crossorigin="anonymous"></script>
+  <style>
+    body { font-family: 'Space Grotesk', sans-serif; }
+    .stroke-line { stroke: rgba(0,255,255,0.15); stroke-width: 0.5px; }
+    .glass { backdrop-filter: blur(14px) saturate(180%); background: rgba(10, 10, 30, 0.06); }
+    .holo-glow { box-shadow: 0 0 0.5px rgba(0,255,255,0.6), 0 0 8px rgba(0,255,255,0.2), 0 0 40px rgba(0,255,255,0.05); transition: box-shadow 0.4s ease-in-out; }
+    .holo-glow:hover { box-shadow: 0 0 1px rgba(0,255,255,0.9), 0 0 12px rgba(0,255,255,0.4), 0 0 60px rgba(0,255,255,0.1); }
+    .scanlines::before { content: ""; position: absolute; inset: 0;
+      background-image: repeating-linear-gradient(to bottom, rgba(255,255,255,0.02) 0px, transparent 1px, transparent 4px);
+      pointer-events: none; z-index: 10;
+    }
+  </style>
+</head>
+<body class="bg-black text-white antialiased overflow-x-hidden">
+  <main style="min-height: 100vh; background: #000;">
+    <h1 class="text-3xl font-bold text-cyan-200 mb-6 text-center" style="margin-top: 24px;">Knowledge Diffusion Map</h1>
+    <iframe src="https://app.vosviewer.com/?dark_ui=true&max_n_links=100000&json=https://raw.githubusercontent.com/VedaantS/kdgraph/refs/heads/main/VOSviewer-network%20(1).json" style="width:100vw; height:calc(100vh - 140px); border:none; display:block; background:#000;" allowfullscreen></iframe>
+  </main>
+  <footer class="py-8 text-center glass mt-16 relative z-10 border-t border-cyan-500/10">
+    <p class="text-sm text-cyan-200">&copy; 2025 Atlantis. All rights reserved.</p>
+  </footer>
+</body>
+</html>

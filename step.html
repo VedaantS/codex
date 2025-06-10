@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Futuristic Blueprint UI 2030</title>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+  <script src="https://kit.fontawesome.com/dac0a9835a.js" crossorigin="anonymous"></script>
+  <style>
+    body { font-family: 'Space Grotesk', sans-serif; }
+    .stroke-line { stroke: rgba(0,255,255,0.15); stroke-width: 0.5px; }
+    .glass { backdrop-filter: blur(14px) saturate(180%); background: rgba(10, 10, 30, 0.06); }
+    .holo-glow { box-shadow: 0 0 0.5px rgba(0,255,255,0.6), 0 0 8px rgba(0,255,255,0.2), 0 0 40px rgba(0,255,255,0.05); transition: box-shadow 0.4s ease-in-out; }
+    .holo-glow:hover { box-shadow: 0 0 1px rgba(0,255,255,0.9), 0 0 12px rgba(0,255,255,0.4), 0 0 60px rgba(0,255,255,0.1); }
+    .scanlines::before { content: ""; position: absolute; inset: 0;
+      background-image: repeating-linear-gradient(to bottom, rgba(255,255,255,0.02) 0px, transparent 1px, transparent 4px);
+      pointer-events: none; z-index: 10;
+    }
+    .flow-container { background: rgba(0,0,0,0.4); border: 0.5px solid rgba(0,255,255,0.2); overflow: auto; position: relative; }
+    .flow-grid { background-image: repeating-linear-gradient(0deg, rgba(0,255,255,0.1) 1px, transparent 1px),
+                   repeating-linear-gradient(90deg, rgba(0,255,255,0.1) 1px, transparent 1px);
+                  background-size: 50px 50px; }
+    .node { min-width: 120px; padding: 12px; background: rgba(20,20,40,0.8); border: 0.5px solid rgba(0,255,255,0.3); border-radius: 8px; color: #ccf; cursor: grab; position: absolute; user-select: none; }
+    .node.selected { border-color: cyan; }
+    .fullscreen-btn { position: absolute; top: 1rem; right: 1rem; z-index: 20; }
+    .drag-palette .node { position: relative; margin-bottom: 1rem; cursor: grab; }
+    .drag-palette { width: 200px; padding: 1rem; }
+        .editor, .preview { width: 100%; height: 300px; border: 0.5px solid rgba(0,255,255,0.3); border-radius: 8px; background: rgba(20,20,40,0.8); color: #ccf; padding: 1rem; }
+    .editor { resize: vertical; }
+    .preview { overflow: auto; }
+    .file-drop { border:2px dashed rgba(0,255,255,0.4); border-radius:8px; padding:2rem; text-align:center; background:rgba(10,10,20,0.4); cursor:pointer; }
+    .file-drop.dragover { background:rgba(10,10,30,0.6); }
+    .rating { display:flex; gap:.5rem; align-items:center; }
+    .rating input { accent-color:cyan; }
+
+  </style>
+  <!-- LeaderLine for arrows -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leader-line/1.0.7/leader-line.min.js"></script>
+</head>
+<body class="bg-black text-white antialiased overflow-x-hidden">
+
+  <nav class="fixed top-0 w-full flex justify-between items-center px-10 py-4 glass border-b border-cyan-500/10 z-50" style="z-index: 11;">
+    <a href="/" class="text-2xl font-bold tracking-wide text-cyan-300">atlantis [CODEX]</a>
+    <ul class="flex space-x-8 text-sm">
+      <li><a href="#" class="hover:text-cyan-400 transition">Home</a></li>
+      <li><a href="/kdmap.html" class="hover:text-cyan-400 transition">Frontier</a></li>
+      <li><a href="/chat.html" class="hover:text-cyan-400 transition">Chat</a></li>
+      <li><a href="/profile.html" class="hover:text-cyan-400 transition">Profile</a></li>
+    </ul>
+  </nav>
+
+
+
+  <!-- Step Detail Component -->
+  <section id="step-detail" class="py-20 px-8 mx-auto relative z-10">
+    <!-- Blueprint Grid SVG background -->
+    <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg" style="z-index:-1;">
+      <defs>
+        <pattern id="grid-step" width="80" height="80" patternUnits="userSpaceOnUse">
+          <path d="M80 0 L0 0 0 80" class="stroke-line" />
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#grid-step)"
+    </svg>
+    
+    <h2 class="text-4xl font-bold text-cyan-200 mb-6">
+      Step Detail 
+      <span id="step-name-label" class="text-cyan-100 font-semibold ml-4"></span>
+      <span id="step-id-label" class="text-base text-cyan-400 ml-4"></span>
+    </h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 ">
+      <!-- Step Description/Preview -->
+      <div>
+        <label class="text-sm text-cyan-200 mb-2 block">Step Description</label>
+        <textarea id="step-editor" class="editor holo-glow mb-4" placeholder="Write step instructions in Markdown..."></textarea>
+        <label class="text-xs text-cyan-300 mb-1 block">Preview</label>
+        <div id="step-preview" class="preview holo-glow"></div>
+      </div>
+      <!-- Results Description/Preview -->
+      <div>
+        <label class="text-sm text-cyan-200 mb-2 block">Results Description</label>
+        <textarea id="results-editor" class="editor holo-glow mb-4" placeholder="Describe the results of this step in Markdown..."></textarea>
+        <label class="text-xs text-cyan-300 mb-1 block">Preview</label>
+        <div id="results-preview" class="preview holo-glow"></div>
+      </div>
+    </div>
+
+    <!-- File Attachments -->
+    <div class="mt-8">
+      <label class="text-sm text-cyan-200 mb-2 block">Attachments</label>
+      <div id="file-drop" class="file-drop holo-glow">
+        <i class="fas fa-cloud-upload-alt text-3xl text-cyan-300 mb-2"></i>
+        <p class="text-cyan-100/80">Drag & drop files here or click to upload</p>
+        <input type="file" id="file-input" multiple class="hidden" />
+      </div>
+      <ul id="file-list" class="mt-4 list-disc list-inside text-cyan-100/80"></ul>
+    </div>
+
+    <!-- AI-Generated Scores -->
+    <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="rating">
+        <span class="w-32">Reproducibility:</span>
+        <span id="repro-score" class="text-xl font-bold">—</span>
+      </div>
+      <div class="rating">
+        <span class="w-32">Impact:</span>
+        <span id="impact-score" class="text-xl font-bold">—</span>
+      </div>
+      <div class="rating">
+        <span class="w-32">Difficulty:</span>
+        <span id="diff-score" class="text-xl font-bold">—</span>
+      </div>
+    </div>
+    <div class="mt-4 text-right">
+      <button id="regen-scores" class="px-4 py-2 glass holo-glow rounded-lg border border-cyan-400/30 hover:border-cyan-300 transition">Grade it</button>
+    </div>
+
+    <!-- Additional Fields -->
+    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <label class="text-sm text-cyan-200 mb-2 block">Estimated Time (mins)</label>
+        <input type="number" id="est-time" class="w-full p-2 glass text-cyan-100" placeholder="e.g. 45" />
+      </div>
+      <div>
+        <label class="text-sm text-cyan-200 mb-2 block">Assigned To</label>
+        <input type="text" id="assigned-to" class="w-full p-2 glass text-cyan-100" placeholder="e.g. Dr. Smith" />
+      </div>
+      <div>
+        <label class="text-sm text-cyan-200 mb-2 block">Due Date</label>
+        <input type="date" id="due-date" class="w-full p-2 glass text-cyan-100" />
+      </div>
+      <div class="flex items-center mt-2">
+        <input type="checkbox" id="done-marker" class="mr-2" />
+        <label for="done-marker" class="text-cyan-200">Mark as Done</label>
+      </div>
+    </div>
+
+    <div class="mt-8 text-right">
+      <button id="save-step" class="px-6 py-3 glass holo-glow rounded-lg border border-cyan-400/30 hover:border-cyan-300 transition">Save Step</button>
+    </div>
+  </section>
+
+  <!-- Scripts -->
+  <!-- Markdown parser -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script>
+    const editor = document.getElementById('step-editor');
+    const preview = document.getElementById('step-preview');
+    const resultsEditor = document.getElementById('results-editor');
+    const resultsPreview = document.getElementById('results-preview');
+    // Live preview for step description
+    editor.addEventListener('input', () => {
+      preview.innerHTML = marked.parse(editor.value || '');
+    });
+    // Live preview for results description
+    resultsEditor.addEventListener('input', () => {
+      resultsPreview.innerHTML = marked.parse(resultsEditor.value || '');
+    });
+
+    // File drop/upload logic for attachments
+const fileDrop = document.getElementById('file-drop');
+const fileInput = document.getElementById('file-input');
+const fileList = document.getElementById('file-list');
+
+function getStepIdFromQuery() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('step_id');
+}
+
+function renderFileList(files) {
+  fileList.innerHTML = '';
+  if (!files || files.length === 0) {
+    fileList.innerHTML = '<li class="text-cyan-400/60">No attachments yet.</li>';
+    return;
+  }
+  files.forEach(f => {
+    const li = document.createElement('li');
+    li.innerHTML = `<a href="/attachments/${encodeURIComponent(f.id)}/download" target="_blank" class="underline text-cyan-200 hover:text-cyan-300">${f.filename}</a> <span class="text-xs text-cyan-400/60">(${(f.size_bytes/1024).toFixed(1)} KB)</span>`;
+    fileList.appendChild(li);
+  });
+}
+
+async function fetchAndRenderAttachments() {
+  const stepId = getStepIdFromQuery();
+  if (!stepId) return;
+  const token = localStorage.getItem('access_token');
+  if (!token) return;
+  try {
+    const res = await fetch(`/steps/${encodeURIComponent(stepId)}/attachments`, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (res.ok) {
+      const files = await res.json();
+      renderFileList(files);
+    }
+  } catch (e) {}
+}
+
+fileDrop.addEventListener('click', () => fileInput.click());
+fileDrop.addEventListener('dragover', e => {
+  e.preventDefault();
+  fileDrop.classList.add('dragover');
+});
+fileDrop.addEventListener('dragleave', e => {
+  e.preventDefault();
+  fileDrop.classList.remove('dragover');
+});
+fileDrop.addEventListener('drop', e => {
+  e.preventDefault();
+  fileDrop.classList.remove('dragover');
+  if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+    handleFilesUpload(e.dataTransfer.files);
+  }
+});
+fileInput.addEventListener('change', e => {
+  if (fileInput.files && fileInput.files.length > 0) {
+    handleFilesUpload(fileInput.files);
+  }
+});
+
+async function handleFilesUpload(files) {
+  const stepId = getStepIdFromQuery();
+  if (!stepId) return;
+  const token = localStorage.getItem('access_token');
+  if (!token) return;
+  for (let i = 0; i < files.length; i++) {
+    const formData = new FormData();
+    formData.append('file', files[i]);
+    try {
+      const res = await fetch(`/steps/${encodeURIComponent(stepId)}/attachments`, {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token },
+        body: formData
+      });
+      // Optionally handle response
+    } catch (e) {}
+  }
+  fetchAndRenderAttachments();
+}
+
+    // AI score generation
+    const regenBtn = document.getElementById('regen-scores');
+    const fields = ['repro','impact','diff'];
+    regenBtn.addEventListener('click', async () => {
+      regenBtn.disabled = true;
+      regenBtn.textContent = 'Grading...';
+      const stepId = getStepIdFromQuery();
+      const token = localStorage.getItem('access_token');
+      if (!stepId || !token) {
+        regenBtn.textContent = 'Grade it';
+        regenBtn.disabled = false;
+        return;
+      }
+      try {
+        const res = await fetch(`/steps/${encodeURIComponent(stepId)}/grade`, {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (res.ok) {
+          const scores = await res.json();
+          document.getElementById('repro-score').textContent = scores.reproducibility?.toFixed(2) ?? '—';
+          document.getElementById('impact-score').textContent = scores.impact?.toFixed(2) ?? '—';
+          document.getElementById('diff-score').textContent = scores.difficulty?.toFixed(2) ?? '—';
+          regenBtn.textContent = 'Grade it again';
+        } else {
+          const err = await res.json();
+          alert('Failed to grade step: ' + (err.error || res.status));
+          regenBtn.textContent = 'Grade it';
+        }
+      } catch (e) {
+        alert('Error grading step: ' + e);
+        regenBtn.textContent = 'Grade it';
+      }
+      regenBtn.disabled = false;
+    });
+
+    function getStepIdFromQuery() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('step_id');
+    }
+
+    function getStepNameFromQuery() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('step_name');
+    }
+
+    async function loadStepDetails() {
+      const stepId = getStepIdFromQuery();
+      if (!stepId) return;
+      const token = localStorage.getItem('access_token');
+      if (!token) return;
+      try {
+        const res = await fetch(`/steps/${encodeURIComponent(stepId)}`, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!res.ok) return;
+        const step = await res.json();
+        document.getElementById('step-editor').value = step.content_markdown || '';
+        // Add support for results_markdown (new field)
+        document.getElementById('results-editor').value = step.results_markdown || '';
+        // Trigger live previews
+        if (typeof marked !== 'undefined') {
+          document.getElementById('step-preview').innerHTML = marked.parse(step.content_markdown || '');
+          document.getElementById('results-preview').innerHTML = marked.parse(step.results_markdown || '');
+        }
+        // Fill assignee as email if assigned_to_id is present
+        if (step.assigned_to_id) {
+          try {
+            const userRes = await fetch(`/users/${encodeURIComponent(step.assigned_to_id)}`, {
+              headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (userRes.ok) {
+              const user = await userRes.json();
+              document.getElementById('assigned-to').value = user.email || step.assigned_to_id;
+            } else {
+              document.getElementById('assigned-to').value = step.assigned_to_id;
+            }
+          } catch (e) {
+            document.getElementById('assigned-to').value = step.assigned_to_id;
+          }
+        } else {
+          document.getElementById('assigned-to').value = '';
+        }
+        document.getElementById('est-time').value = step.estimated_time_minutes || '';
+        document.getElementById('due-date').value = step.due_date || '';
+        document.getElementById('done-marker').checked = !!step.done;
+        document.getElementById('step-name-label').textContent = step.title || '';
+        // Optionally set scores if present
+        if (step.reproducibility_score !== undefined && step.reproducibility_score !== null)
+          document.getElementById('repro-score').textContent = Number(step.reproducibility_score).toFixed(2);
+        else
+          document.getElementById('repro-score').textContent = '—';
+        if (step.impact_score !== undefined && step.impact_score !== null)
+          document.getElementById('impact-score').textContent = Number(step.impact_score).toFixed(2);
+        else
+          document.getElementById('impact-score').textContent = '—';
+        if (step.difficulty_score !== undefined && step.difficulty_score !== null)
+          document.getElementById('diff-score').textContent = Number(step.difficulty_score).toFixed(2);
+        else
+          document.getElementById('diff-score').textContent = '—';
+      } catch (e) {}
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      // Set step name from query param immediately (before backend loads)
+      const stepNameFromQuery = getStepNameFromQuery();
+      if (stepNameFromQuery) {
+        document.getElementById('step-name-label').textContent = decodeURIComponent(stepNameFromQuery);
+      }
+      loadStepDetails();
+      fetchAndRenderAttachments();
+
+    // Save step handler (PATCH to backend)
+    document.getElementById('save-step').addEventListener('click', async function() {
+      const stepId = getStepIdFromQuery();
+      if (!stepId) return;
+      const token = localStorage.getItem('access_token');
+      if (!token) return;
+      const desc = document.getElementById('step-editor').value;
+      const resultsDesc = document.getElementById('results-editor').value;
+      let assignee = document.getElementById('assigned-to').value;
+      const estTime = document.getElementById('est-time').value;
+      const dueDate = document.getElementById('due-date').value;
+      const done = document.getElementById('done-marker').checked;
+
+      async function getUserIdByEmail(email) {
+  const token = localStorage.getItem('access_token');
+  if (!token) return null;
+  try {
+    const res = await fetch(`/users?email=${encodeURIComponent(email)}`, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!res.ok) return null;
+    const users = await res.json();
+    // Adjust this if your API returns a single user object instead of a list
+    return Array.isArray(users) && users.length > 0 ? users[0].id : (users.id || null);
+  } catch (e) { return null; }
+}
+
+
+      // If assignee looks like an email, convert to UUID
+      if (assignee && assignee.includes('@')) {
+        const uuid = await getUserIdByEmail(assignee);
+        if (!uuid) {
+          alert('Could not find user with that email.');
+          return;
+        }
+        assignee = uuid;
+      }
+
+      const payload = {
+        content_markdown: desc,
+        results_markdown: resultsDesc,
+        assigned_to_id: assignee,
+        estimated_time_minutes: estTime ? parseInt(estTime, 10) : null,
+        due_date: dueDate,
+        done: done
+      };
+      try {
+        const res = await fetch(`/steps/${encodeURIComponent(stepId)}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          alert('Step saved!');
+        } else {
+          alert('Failed to save step.');
+        }
+      } catch (e) { alert('Error saving step.'); }
+    });
+
+    // Shoulder panel open/close logic
+    const shoulderPanel = document.getElementById('shoulder-panel');
+    const openShoulder = document.getElementById('open-shoulder');
+    const closeShoulder = document.getElementById('close-shoulder');
+    let shoulderOpen = false;
+    function setShoulder(open) {
+      if (open) {
+        shoulderPanel.style.opacity = '1';
+        shoulderPanel.style.visibility = 'visible';
+        openShoulder.style.display = 'none';
+      } else {
+        shoulderPanel.style.opacity = '0';
+        shoulderPanel.style.visibility = 'hidden';
+        openShoulder.style.display = 'block';
+      }
+      shoulderOpen = open;
+    }
+    if (openShoulder && closeShoulder && shoulderPanel) {
+      openShoulder.addEventListener('click', () => setShoulder(true));
+      closeShoulder.addEventListener('click', () => setShoulder(false));
+      setShoulder(false);
+    }
+  });
+
+  // Copilot button and logic for all textareas
+  function addCopilotToTextarea(textarea) {
+    if (!textarea) return;
+    if (textarea.parentElement.querySelector('.copilot-btn')) return;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = '💡 Copilot';
+    btn.className = 'copilot-btn ml-2 px-3 py-1 rounded bg-cyan-800 text-cyan-100 text-xs hover:bg-cyan-700 transition';
+    btn.onclick = async function() {
+      btn.disabled = true;
+      btn.textContent = 'Thinking...';
+      const prompt = textarea.value || textarea.placeholder || 'Suggest content for this field.';
+      try {
+        const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer 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'
+          },
+          body: JSON.stringify({
+            model: 'gpt-3.5-turbo',
+            messages: [
+              { role: 'system', content: 'You are a helpful scientific writing assistant for experiment steps and lab notebooks.' },
+              { role: 'user', content: prompt }
+            ]
+          })
+        });
+        const data = await resp.json();
+        const suggestion = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+        if (suggestion) textarea.value = suggestion.trim();
+        btn.textContent = '💡 Copilot';
+      } catch (e) {
+        btn.textContent = 'Try Again';
+      }
+      btn.disabled = false;
+    };
+    textarea.parentElement.appendChild(btn);
+  }
+  document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('textarea').forEach(addCopilotToTextarea);
+  });
+  </script>
+
+  <footer class="py-8 text-center glass mt-16 relative z-10 border-t border-cyan-500/10">
+    <p class="text-sm text-cyan-200">&copy; 2025 Atlantis. All rights reserved.</p>
+  </footer>
+
+  <script>
+  // --- RBAC: Enforce permissions on step.html ---
+  function getStepIdFromQuery() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('step_id');
+  }
+  function getToken() {
+    return localStorage.getItem('access_token');
+  }
+  function getTokenUserId() {
+    const token = getToken();
+    if (!token) return null;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.sub || payload.identity || payload.user_id || payload.id;
+    } catch (e) { return null; }
+  }
+  async function enforceStepRBAC() {
+    const stepId = getStepIdFromQuery();
+    const token = getToken();
+    if (!stepId || !token) return;
+    try {
+      const res = await fetch(`/steps/${encodeURIComponent(stepId)}`, { headers: { 'Authorization': 'Bearer ' + token } });
+      if (res.status === 403) {
+        showAccessDenied();
+        return;
+      }
+      if (!res.ok) return;
+      const step = await res.json();
+      // RBAC: Only allow edit if owner or collaborator
+      const userId = getTokenUserId();
+      const canEdit = (step.experiment_owner_id === userId) || (Array.isArray(step.collaborators) && step.collaborators.includes(userId));
+      if (!canEdit) {
+        disableEditingUI();
+      }
+    } catch (e) { showAccessDenied(); }
+  }
+  function showAccessDenied() {
+    // Hide main UI and show overlay
+    document.body.innerHTML = `<div class='fixed inset-0 flex items-center justify-center bg-black/90 z-50'><div class='glass rounded-2xl p-12 text-center max-w-lg'><h2 class='text-3xl font-bold text-red-400 mb-4'>Access Denied</h2><p class='text-cyan-200 mb-4'>You do not have permission to view or edit this step.</p><a href='/' class='text-cyan-300 underline'>Return Home</a></div></div>`;
+  }
+  function disableEditingUI() {
+    // Hide or disable editing UI elements (step save, editors, etc)
+    const saveBtn = document.getElementById('save-step');
+    if (saveBtn) saveBtn.style.display = 'none';
+    const editors = document.querySelectorAll('.editor');
+    editors.forEach(e => e.setAttribute('readonly', 'readonly'));
+    const resultsEditor = document.getElementById('results-editor');
+    if (resultsEditor) resultsEditor.setAttribute('readonly', 'readonly');
+    // Optionally, show a banner
+    const main = document.querySelector('section#step-detail');
+    if (main) {
+      const banner = document.createElement('div');
+      banner.className = 'fixed top-0 left-0 w-full bg-yellow-900 text-yellow-200 text-center py-2 z-50';
+      banner.textContent = 'View Only: You do not have edit access to this step.';
+      main.prepend(banner);
+    }
+  }
+  document.addEventListener('DOMContentLoaded', enforceStepRBAC);
+  </script>
+
+</body>
+
+</html>

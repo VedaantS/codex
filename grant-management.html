@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grant Management</title>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+  <script src="https://kit.fontawesome.com/dac0a9835a.js" crossorigin="anonymous"></script>
+  <style>
+    body { font-family: 'Space Grotesk', sans-serif; }
+    .stroke-line { stroke: rgba(0,255,255,0.15); stroke-width: 0.5px; }
+    .glass { backdrop-filter: blur(14px) saturate(180%); background: rgba(10, 10, 30, 0.06); }
+    .holo-glow { box-shadow: 0 0 0.5px rgba(0,255,255,0.6), 0 0 8px rgba(0,255,255,0.2), 0 0 40px rgba(0,255,255,0.05); transition: box-shadow 0.4s ease-in-out; }
+    .holo-glow:hover { box-shadow: 0 0 1px rgba(0,255,255,0.9), 0 0 12px rgba(0,255,255,0.4), 0 0 60px rgba(0,255,255,0.1); }
+    .scanlines::before { content: ""; position: absolute; inset: 0;
+      background-image: repeating-linear-gradient(to bottom, rgba(255,255,255,0.02) 0px, transparent 1px, transparent 4px);
+      pointer-events: none; z-index: 10;
+    }
+  </style>
+  <!-- LeaderLine for arrows -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leader-line/1.0.7/leader-line.min.js"></script>
+</head>
+<body class="bg-black text-white antialiased overflow-x-hidden">
+
+  <nav class="fixed top-0 w-full flex justify-between items-center px-10 py-4 glass border-b border-cyan-500/10 z-50" style="z-index: 11;">
+    <a href="/" class="text-2xl font-bold tracking-wide text-cyan-300">atlantis [CODEX]</a>
+    <ul class="flex space-x-8 text-sm">
+      <li><a href="#" class="hover:text-cyan-400 transition">Home</a></li>
+      <li><a href="/kdmap.html" class="hover:text-cyan-400 transition">Frontier</a></li>
+      <li><a href="/chat.html" class="hover:text-cyan-400 transition">Chat</a></li>
+      <li><a href="/profile.html" class="hover:text-cyan-400 transition">Profile</a></li>
+    </ul>
+  </nav>
+
+  <!-- Funder: Grant Management Interface -->
+  <section id="funder-grant-management" class="py-20 px-8 mx-auto relative z-10 max-w-5xl">
+    <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg" style="z-index:-1;">
+      <defs>
+        <pattern id="grid-funder-grant-mgmt" width="80" height="80" patternUnits="userSpaceOnUse">
+          <path d="M80 0 L0 0 0 80" class="stroke-line" />
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#grid-funder-grant-mgmt)" />
+    </svg>
+    <h2 class="text-3xl font-bold text-cyan-200 mb-6">Manage Grants</h2>
+    <div class="glass rounded-2xl p-8 holo-glow scanlines mb-8">
+      <form id="grant-mgmt-form" class="flex flex-col gap-4">
+        <div class="flex flex-col md:flex-row gap-4">
+          <div class="flex-1">
+            <label class="block text-cyan-200 mb-1">Grant Name</label>
+            <input type="text" id="grant-mgmt-name" class="w-full p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent" required>
+          </div>
+          <div>
+            <label class="block text-cyan-200 mb-1">Funding (USD)</label>
+            <input type="number" id="grant-mgmt-funding" class="w-full p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent" required>
+          </div>
+          <div class="flex-1">
+            <label class="block text-cyan-200 mb-1">Description</label>
+            <input type="text" id="grant-mgmt-desc" class="w-full p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent" required>
+          </div>
+        </div>
+        <div>
+          <label class="block text-cyan-200 mb-1">Grant Application Questions</label>
+          <div id="grant-mgmt-questions-list" class="flex flex-col gap-2 mb-2"></div>
+          <div class="flex gap-2">
+            <input type="text" id="grant-mgmt-question-input" class="flex-1 p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent" placeholder="Add a question...">
+            <button type="button" id="grant-mgmt-add-question" class="px-3 py-2 glass rounded border border-cyan-400/20 text-cyan-200 hover:border-cyan-300">Add Question</button>
+          </div>
+        </div>
+        <div class="flex gap-2 mt-2">
+          <button type="submit" id="grant-mgmt-submit" class="px-4 py-2 glass holo-glow rounded border border-cyan-400/30 hover:border-cyan-300 transition text-cyan-200">Add Grant</button>
+          <button type="button" id="grant-mgmt-cancel" class="px-4 py-2 glass rounded border border-cyan-400/20 text-cyan-200 hidden">Cancel</button>
+        </div>
+      </form>
+    </div>
+    <div class="glass rounded-2xl p-8 holo-glow scanlines">
+      <h3 class="text-xl font-semibold text-cyan-100 mb-4">All Grants</h3>
+      <table class="min-w-full text-cyan-100/90">
+        <thead>
+          <tr class="border-b border-cyan-400/20">
+            <th class="py-2 px-4 text-left">Name</th>
+            <th class="py-2 px-4 text-left">Funding</th>
+            <th class="py-2 px-4 text-left">Description</th>
+            <th class="py-2 px-4 text-left">Questions</th>
+            <th class="py-2 px-4 text-left">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="grant-mgmt-table-body">
+          <!-- Populated by JS -->
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <div class="h-32"></div>
+
+  <footer class="py-8 text-center glass mt-16 relative z-10 border-t border-cyan-500/10">
+    <p class="text-sm text-cyan-200">&copy; 2025 Atlantis. All rights reserved.</p>
+  </footer>
+
+  <script>
+    // Replace localStorage grants with real backend grants for the current funder
+    let grants = [];
+    let editIdx = null;
+    let currentQuestions = [];
+    let editingGrantId = null;
+
+    async function fetchGrants() {
+      const token = localStorage.getItem('access_token') || '';
+      const resp = await fetch('/grants', { headers: { 'Authorization': 'Bearer ' + token } });
+      if (!resp.ok) return [];
+      const allGrants = await resp.json();
+      // Only show grants created by this user
+      const userId = (() => { try { return JSON.parse(atob(token.split('.')[1])).sub; } catch (e) { return null; } })();
+      return allGrants.filter(g => g.created_by_id === userId);
+    }
+
+    async function renderGrantMgmtTable() {
+      grants = await fetchGrants();
+      const tbody = document.getElementById('grant-mgmt-table-body');
+      tbody.innerHTML = '';
+      grants.forEach((g, idx) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="py-2 px-4">${g.title}</td>
+          <td class="py-2 px-4">$${g.total_funding_usd ? Number(g.total_funding_usd).toLocaleString() : ''}</td>
+          <td class="py-2 px-4">${g.description || ''}</td>
+          <td class="py-2 px-4">${(g.application_questions || []).map(q => `<div class="mb-1">${q}</div>`).join('')}</td>
+          <td class="py-2 px-4 flex gap-2">
+            <button class="px-2 py-1 glass rounded border border-cyan-400/20 text-cyan-200 hover:border-cyan-300" onclick="editGrant('${g.id}')">Edit</button>
+            <button class="px-2 py-1 glass rounded border border-red-400/20 text-red-300 hover:border-red-300" onclick="removeGrant('${g.id}')">Remove</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function addOrUpdateGrant(e) {
+      e.preventDefault();
+      const token = localStorage.getItem('access_token') || '';
+      const title = document.getElementById('grant-mgmt-name').value.trim();
+      const total_funding_usd = document.getElementById('grant-mgmt-funding').value.trim();
+      const description = document.getElementById('grant-mgmt-desc').value.trim();
+      const application_questions = [...currentQuestions];
+      let method = 'POST', url = '/grants';
+      if (editingGrantId) {
+        method = 'PATCH';
+        url = `/grants/${editingGrantId}`;
+      }
+      const resp = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify({ title, total_funding_usd, description, application_questions })
+      });
+      if (resp.ok) {
+        await renderGrantMgmtTable();
+        document.getElementById('grant-mgmt-form').reset();
+        currentQuestions = [];
+        renderGrantMgmtQuestions();
+        document.getElementById('grant-mgmt-submit').textContent = 'Add Grant';
+        document.getElementById('grant-mgmt-cancel').classList.add('hidden');
+        editingGrantId = null;
+      } else {
+        alert('Error saving grant.');
+      }
+    }
+
+    async function removeGrant(id) {
+      if (!confirm('Remove this grant?')) return;
+      const token = localStorage.getItem('access_token') || '';
+      const resp = await fetch(`/grants/${id}`, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
+      if (resp.ok) {
+        await renderGrantMgmtTable();
+      } else {
+        alert('Error removing grant.');
+      }
+    }
+
+    async function editGrant(id) {
+      const g = grants.find(gr => gr.id === id);
+      if (!g) return;
+      document.getElementById('grant-mgmt-name').value = g.title;
+      document.getElementById('grant-mgmt-funding').value = g.total_funding_usd;
+      document.getElementById('grant-mgmt-desc').value = g.description;
+      currentQuestions = [...(g.application_questions || [])];
+      renderGrantMgmtQuestions();
+      document.getElementById('grant-mgmt-submit').textContent = 'Save Changes';
+      document.getElementById('grant-mgmt-cancel').classList.remove('hidden');
+      editingGrantId = g.id;
+    }
+
+    document.getElementById('grant-mgmt-form').addEventListener('submit', addOrUpdateGrant);
+    document.getElementById('grant-mgmt-cancel').addEventListener('click', function() {
+      document.getElementById('grant-mgmt-form').reset();
+      currentQuestions = [];
+      renderGrantMgmtQuestions();
+      document.getElementById('grant-mgmt-submit').textContent = 'Add Grant';
+      this.classList.add('hidden');
+      editingGrantId = null;
+    });
+
+    // Question logic (unchanged)
+    function renderGrantMgmtQuestions() {
+      const list = document.getElementById('grant-mgmt-questions-list');
+      list.innerHTML = '';
+      currentQuestions.forEach((q, i) => {
+        const div = document.createElement('div');
+        div.className = "flex items-center gap-2";
+        div.innerHTML = `<span class="flex-1">${q}</span>
+          <button type="button" class="text-red-400 hover:text-red-300 text-xs" onclick="removeGrantQuestion(${i})"><i class="fas fa-times"></i></button>`;
+        list.appendChild(div);
+      });
+    }
+    window.removeGrantQuestion = function(idx) {
+      currentQuestions.splice(idx, 1);
+      renderGrantMgmtQuestions();
+    };
+    document.getElementById('grant-mgmt-add-question').addEventListener('click', function() {
+      const input = document.getElementById('grant-mgmt-question-input');
+      const val = input.value.trim();
+      if (val) {
+        currentQuestions.push(val);
+        input.value = '';
+        renderGrantMgmtQuestions();
+      }
+    });
+
+    // Copilot button and logic for all textareas
+    function addCopilotToTextarea(textarea) {
+      if (!textarea) return;
+      if (textarea.parentElement.querySelector('.copilot-btn')) return;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = '💡 Copilot';
+      btn.className = 'copilot-btn ml-2 px-3 py-1 rounded bg-cyan-800 text-cyan-100 text-xs hover:bg-cyan-700 transition';
+      btn.onclick = async function() {
+        btn.disabled = true;
+        btn.textContent = 'Thinking...';
+        const prompt = textarea.value || textarea.placeholder || 'Suggest content for this field.';
+        try {
+          const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer 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'
+            },
+            body: JSON.stringify({
+              model: 'gpt-3.5-turbo',
+              messages: [
+                { role: 'system', content: 'You are a helpful scientific writing assistant for grant creation and management.' },
+                { role: 'user', content: prompt }
+              ]
+            })
+          });
+          const data = await resp.json();
+          const suggestion = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+          if (suggestion) textarea.value = suggestion.trim();
+          btn.textContent = '💡 Copilot';
+        } catch (e) {
+          btn.textContent = 'Try Again';
+        }
+        btn.disabled = false;
+      };
+      textarea.parentElement.appendChild(btn);
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('textarea').forEach(addCopilotToTextarea);
+    });
+
+    // Initial table render
+    renderGrantMgmtTable();
+  </script>
+
+</body>
+</html>

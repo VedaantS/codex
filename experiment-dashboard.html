@@ -1,0 +1,462 @@
+<!-- experiment-dashboard.html: Dashboard for a specific experiment/project and grant application -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Experiment Dashboard</title>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+  <script src="https://kit.fontawesome.com/dac0a9835a.js" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leader-line/1.0.7/leader-line.min.js"></script>
+  <style>
+    body { font-family: 'Space Grotesk', sans-serif; background: #0a0a16; color: #e0f7fa; }
+    .stroke-line { stroke: rgba(0,255,255,0.15); stroke-width: 0.5px; }
+    .glass { backdrop-filter: blur(14px) saturate(180%); background: rgba(10, 10, 30, 0.06); }
+    .holo-glow { box-shadow: 0 0 0.5px rgba(0,255,255,0.6), 0 0 8px rgba(0,255,255,0.2), 0 0 40px rgba(0,255,255,0.05); transition: box-shadow 0.4s ease-in-out; }
+    .holo-glow:hover { box-shadow: 0 0 1px rgba(0,255,255,0.9), 0 0 12px rgba(0,255,255,0.4), 0 0 60px rgba(0,255,255,0.1); }
+    .score-badge { border-radius: 0.5rem; padding: 0.25rem 0.75rem; font-weight: 600; }
+    .leader-line { z-index: 9999; }
+    
+</style>
+</head>
+<body class="min-h-screen flex flex-col bg-black text-white antialiased overflow-x-hidden">
+  <!-- Blueprint Grid SVG background -->
+  <svg class="absolute inset-0 w-full h-full pointer-events-none" xmlns="http://www.w3.org/2000/svg" style="z-index:-1;">
+    <defs>
+      <pattern id="grid-step" width="80" height="80" patternUnits="userSpaceOnUse">
+        <path d="M80 0 L0 0 0 80" class="stroke-line" />
+      </pattern>
+    </defs>
+    <rect width="100%" height="100%" fill="url(#grid-step)" />
+  </svg>
+  <main class="flex-1 flex flex-col gap-8 p-8 pt-32 z-10 relative max-w-7xl mx-auto w-full" style="padding-top: 3rem;">
+    <!-- Tab content: Dashboard -->
+    <div id="tab-dashboard" style="display:none;">
+      <!-- Dashboard Summary Row -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="glass rounded-xl p-6 flex flex-col items-center justify-center holo-glow text-center">
+          <div class="text-cyan-300 text-2xl mb-2"><i class="fas fa-flask"></i></div>
+          <div class="text-cyan-100 text-lg font-bold" id="exp-title">Experiment Title</div>
+          <div class="text-cyan-400 text-xs" id="exp-meta"></div>
+        </div>
+        <div class="glass rounded-xl p-6 flex flex-col items-center justify-center holo-glow text-center">
+          <div class="text-cyan-300 text-2xl mb-2"><i class="fas fa-vials"></i></div>
+          <div class="text-cyan-200 text-sm mb-1">Reproducibility</div>
+          <div class="text-2xl font-bold" id="score-repro">--</div>
+        </div>
+        <div class="glass rounded-xl p-6 flex flex-col items-center justify-center holo-glow text-center">
+          <div class="text-green-300 text-2xl mb-2"><i class="fas fa-bolt"></i></div>
+          <div class="text-green-200 text-sm mb-1">Impact</div>
+          <div class="text-2xl font-bold" id="score-impact">--</div>
+        </div>
+        <div class="glass rounded-xl p-6 flex flex-col items-center justify-center holo-glow text-center">
+          <div class="text-yellow-300 text-2xl mb-2"><i class="fas fa-tachometer-alt"></i></div>
+          <div class="text-yellow-200 text-sm mb-1">Difficulty</div>
+          <div class="text-2xl font-bold" id="score-difficulty">--</div>
+        </div>
+      </div>
+      <!-- Main Dashboard Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <!-- Experiment Details Card -->
+        <section class="col-span-1 glass rounded-xl p-8 shadow-lg holo-glow flex flex-col gap-2">
+          <h2 class="text-xl font-bold text-cyan-200 mb-2 flex items-center gap-2"><i class="fas fa-info-circle text-cyan-400"></i> Experiment Details</h2>
+          <div id="exp-desc" class="mb-2 text-cyan-100"></div>
+          <div id="exp-owner" class="text-cyan-400 text-sm mb-1"></div>
+          <div id="exp-created" class="text-cyan-400 text-xs"></div>
+          <div class="mt-4 flex flex-col gap-2">
+            <div class="flex items-center gap-2"><i class="fas fa-dollar-sign text-purple-400"></i> <span class="text-purple-200">Budget:</span> <span id="score-budget">--</span></div>
+          </div>
+        </section>
+        <!-- Grant Application Answers Card -->
+        <section class="col-span-2 glass rounded-xl p-8 shadow-lg holo-glow flex flex-col">
+          <h2 class="text-xl font-bold text-cyan-200 mb-4 flex items-center gap-2"><i class="fas fa-file-alt text-cyan-400"></i> Grant Application Answers</h2>
+          <div id="grant-answers-list">
+            <div class="text-cyan-200">Loading answers...</div>
+          </div>
+        </section>
+      </div>
+      <!-- Steps Progress Panels (dynamic) - hidden by default -->
+      <div id="steps-progress-row" class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 hidden">
+        <div class="glass rounded-xl p-6 flex flex-col items-center justify-center holo-glow text-center">
+          <div class="text-cyan-300 text-2xl mb-2"><i class="fas fa-check-circle"></i></div>
+          <div class="text-cyan-100 text-lg font-bold">Steps Completed</div>
+          <div class="text-cyan-200 text-3xl font-bold my-2" id="steps-completed">0</div>
+          <div class="w-full bg-cyan-900 rounded-full h-3 mb-2">
+            <div class="bg-cyan-400 h-3 rounded-full" style="width:0%"></div>
+          </div>
+          <div class="text-cyan-400 text-xs" id="steps-completed-meta">of 0 total steps</div>
+        </div>
+        <div class="glass rounded-xl p-6 flex flex-col items-center justify-center holo-glow text-center">
+          <div class="text-yellow-300 text-2xl mb-2"><i class="fas fa-hourglass-half"></i></div>
+          <div class="text-yellow-100 text-lg font-bold">Steps Remaining</div>
+          <div class="text-yellow-200 text-3xl font-bold my-2" id="steps-remaining">0</div>
+          <div class="w-full bg-yellow-900 rounded-full h-3 mb-2">
+            <div class="bg-yellow-400 h-3 rounded-full" style="width:0%"></div>
+          </div>
+          <div class="text-yellow-400 text-xs" id="steps-remaining-meta">of 0 total steps</div>
+        </div>
+      </div>
+    </div>
+    <!-- Tab content: Experiment Hub (Flowchart) -->
+    <div id="tab-hub" style="display:none;">
+      <section id="flowchart" class="relative py-20" style="padding-top: 1rem;">
+        <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg" style="width: 100vw; height: 1200px; min-height: 800px;">
+          <defs><pattern id="grid-fc" width="80" height="80" patternUnits="userSpaceOnUse"><path d="M80 0 L0 0 0 80" class="stroke-line"/></pattern></defs>
+          <rect width="100%" height="100%" fill="url(#grid-fc)" />
+        </svg>
+        <div class="max-w-screen-xl mx-auto relative z-10 flex" style="height: 900px;">
+          <div class="flow-container flow-grid flex-1 ml-8 relative overflow-auto" style="height:100%; min-width:0;">
+            <div id="flow-canvas" tabindex="0" style="position:relative; width:2400px; height:1200px;"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+  <script>
+    // --- Tab logic ---
+    function getQueryParam(name) {
+      const url = new URL(window.location.href);
+      return url.searchParams.get(name);
+    }
+    const tab = getQueryParam('tab') || 'dashboard';
+    document.getElementById('tab-dashboard').style.display = (tab === 'dashboard') ? '' : 'none';
+    document.getElementById('tab-hub').style.display = (tab === 'hub') ? '' : 'none';
+    // --- Dashboard logic (only if dashboard tab) ---
+    if (tab === 'dashboard') {
+      // Parse query params
+      const projectId = getQueryParam('experiment_id') || getQueryParam('project_id');
+      const grantId = getQueryParam('grant_id');
+      const appId = getQueryParam('application_id');
+      const token = localStorage.getItem('access_token');
+      if (!projectId || !appId) {
+        document.getElementById('grant-answers-list').innerHTML = '<div class="text-red-400">Missing project or application ID.</div>';
+        throw new Error('Missing project or application ID');
+      }
+      // Fetch project/experiment details
+      async function fetchProject() {
+        const res = await fetch(`/projects/${encodeURIComponent(projectId)}`, { headers: { 'Authorization': 'Bearer ' + token } });
+        if (!res.ok) throw new Error('Failed to fetch project');
+        return await res.json();
+      }
+      // Fetch grant application (with questions/answers)
+      async function fetchApplication() {
+        const res = await fetch(`/grant-applications/${encodeURIComponent(appId)}`, { headers: { 'Authorization': 'Bearer ' + token } });
+        if (!res.ok) throw new Error('Failed to fetch application');
+        return await res.json();
+      }
+      // Fetch steps for the project
+      async function fetchSteps() {
+        const res = await fetch(`/projects/${encodeURIComponent(projectId)}/steps`, { headers: { 'Authorization': 'Bearer ' + token } });
+        if (!res.ok) return [];
+        return await res.json();
+      }
+      // Render dashboard
+      async function renderDashboard() {
+        try {
+          const [project, app] = await Promise.all([fetchProject(), fetchApplication()]);
+          // Header/meta
+          document.getElementById('exp-title').textContent = project.title || 'Untitled Experiment';
+          document.getElementById('exp-desc').textContent = project.description || '';
+          document.getElementById('exp-owner').textContent = 'Owner: ' + (project.owner_name || project.owner_id || '');
+          document.getElementById('exp-created').textContent = 'Created: ' + (project.created_at ? new Date(project.created_at).toLocaleString() : '');
+          // Scores
+          document.getElementById('score-repro').textContent = 'Reproducibility: ' + (project.reproducibility_score ?? '--');
+          document.getElementById('score-impact').textContent = 'Impact: ' + (project.impact_score ?? '--');
+          document.getElementById('score-difficulty').textContent = 'Difficulty: ' + (project.difficulty_score ?? '--');
+          document.getElementById('score-budget').textContent = '$' + (project.budget_requested ?? '--');
+          // Grant application answers
+          const answersDiv = document.getElementById('grant-answers-list');
+          answersDiv.innerHTML = '';
+          // Accept/Reject buttons for pending applications
+          if (app.status === 'pending') {
+            const actionDiv = document.createElement('div');
+            actionDiv.className = 'mb-6 flex gap-4';
+            const acceptBtn = document.createElement('button');
+            acceptBtn.textContent = 'Accept';
+            acceptBtn.className = 'px-4 py-2 rounded bg-green-700 hover:bg-green-600 text-green-100 font-bold shadow';
+            const rejectBtn = document.createElement('button');
+            rejectBtn.textContent = 'Reject';
+            rejectBtn.className = 'px-4 py-2 rounded bg-red-700 hover:bg-red-600 text-red-100 font-bold shadow';
+            actionDiv.appendChild(acceptBtn);
+            actionDiv.appendChild(rejectBtn);
+            answersDiv.appendChild(actionDiv);
+            acceptBtn.onclick = async function() {
+              acceptBtn.disabled = true; rejectBtn.disabled = true;
+              try {
+                const res = await fetch(`/grant-applications/${encodeURIComponent(app.id)}/status`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                  body: JSON.stringify({ status: 'shortlisted' })
+                });
+                if (res.ok) {
+                  acceptBtn.textContent = 'Accepted!';
+                  rejectBtn.style.display = 'none';
+                  acceptBtn.className += ' bg-green-900';
+                } else {
+                  acceptBtn.disabled = false; rejectBtn.disabled = false;
+                  alert('Failed to accept application.');
+                }
+              } catch (e) {
+                acceptBtn.disabled = false; rejectBtn.disabled = false;
+                alert('Error: ' + e);
+              }
+            };
+            rejectBtn.onclick = async function() {
+              acceptBtn.disabled = true; rejectBtn.disabled = true;
+              try {
+                const res = await fetch(`/grant-applications/${encodeURIComponent(app.id)}/status`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                  body: JSON.stringify({ status: 'rejected' })
+                });
+                if (res.ok) {
+                  rejectBtn.textContent = 'Rejected';
+                  acceptBtn.style.display = 'none';
+                  rejectBtn.className += ' bg-red-900';
+                } else {
+                  acceptBtn.disabled = false; rejectBtn.disabled = false;
+                  alert('Failed to reject application.');
+                }
+              } catch (e) {
+                acceptBtn.disabled = false; rejectBtn.disabled = false;
+                alert('Error: ' + e);
+              }
+            };
+          }
+          if (Array.isArray(app.application_questions) && app.application_questions.length > 0) {
+            for (let i = 0; i < app.application_questions.length; i++) {
+              const q = app.application_questions[i];
+              const a = app.answers[i] || '';
+              const qaDiv = document.createElement('div');
+              qaDiv.className = 'mb-4';
+              qaDiv.innerHTML = `<div class='text-cyan-300 font-semibold mb-1'>${q}</div><div class='text-cyan-100'>${a || '<span class="italic text-cyan-400">No answer</span>'}</div>`;
+              answersDiv.appendChild(qaDiv);
+            }
+          } else if (app.answers && typeof app.answers === 'object') {
+            for (const [q, a] of Object.entries(app.answers)) {
+              const qaDiv = document.createElement('div');
+              qaDiv.className = 'mb-4';
+              qaDiv.innerHTML = `<div class='text-cyan-300 font-semibold mb-1'>${q}</div><div class='text-cyan-100'>${a}</div>`;
+              answersDiv.appendChild(qaDiv);
+            }
+          } else {
+            answersDiv.innerHTML += '<div class="text-cyan-200">No answers found.</div>';
+          }
+          // If NOT pending, show step progress panels
+          if (app.status !== 'pending') {
+            const steps = await fetchSteps();
+            let completed = 0, total = 0;
+            if (Array.isArray(steps)) {
+              total = steps.length;
+              completed = steps.filter(s => s.done).length;
+            }
+            // Insert panels below the summary row (after the summary grid)
+            let progressRow = document.getElementById('steps-progress-row');
+            if (!progressRow) {
+              progressRow = document.createElement('div');
+              progressRow.id = 'steps-progress-row';
+              progressRow.className = 'grid grid-cols-1 md:grid-cols-2 gap-6 mb-8';
+              const main = document.querySelector('main');
+              if (main) main.insertBefore(progressRow, main.children[1]);
+            }
+            progressRow.innerHTML = `
+              <div class="glass rounded-xl p-6 flex flex-col items-center justify-center holo-glow text-center">
+                <div class="text-cyan-300 text-2xl mb-2"><i class="fas fa-check-circle"></i></div>
+                <div class="text-cyan-100 text-lg font-bold">Steps Completed</div>
+                <div class="text-cyan-200 text-3xl font-bold my-2">${completed}</div>
+                <div class="w-full bg-cyan-900 rounded-full h-3 mb-2">
+                  <div class="bg-cyan-400 h-3 rounded-full" style="width:${total ? (100 * completed / total) : 0}%"></div>
+                </div>
+                <div class="text-cyan-400 text-xs">of ${total} total steps</div>
+              </div>
+              <div class="glass rounded-xl p-6 flex flex-col items-center justify-center holo-glow text-center">
+                <div class="text-yellow-300 text-2xl mb-2"><i class="fas fa-hourglass-half"></i></div>
+                <div class="text-yellow-100 text-lg font-bold">Steps Remaining</div>
+                <div class="text-yellow-200 text-3xl font-bold my-2">${total - completed}</div>
+                <div class="w-full bg-yellow-900 rounded-full h-3 mb-2">
+                  <div class="bg-yellow-400 h-3 rounded-full" style="width:${total ? (100 * (total - completed) / total) : 0}%"></div>
+                </div>
+                <div class="text-yellow-400 text-xs">of ${total} total steps</div>
+              </div>
+            `;
+            progressRow.classList.remove('hidden');
+          } else {
+            // Remove progress panels if present
+            const progressRow = document.getElementById('steps-progress-row');
+            if (progressRow) progressRow.remove();
+          }
+        } catch (e) {
+          document.getElementById('grant-answers-list').innerHTML = '<div class="text-red-400">Failed to load dashboard: ' + e.message + '</div>';
+        }
+      }
+      renderDashboard();
+    }
+    // --- Read-only Flowchart logic (only if hub tab) ---
+    if (tab === 'hub') {
+      // Render the flowchart in read-only mode (no drag, no palette, no context menu, no node creation/deletion)
+      (async function renderReadOnlyFlowchart() {
+        const projectId = getQueryParam('experiment_id') || getQueryParam('project_id');
+        const token = localStorage.getItem('access_token');
+        if (!projectId || !token) return;
+        let protocolVersion = null;
+        let protocolVersionId = null;
+        let versions = [];
+        try {
+          // Fetch project and experiment
+          const projRes = await fetch(`/projects/${encodeURIComponent(projectId)}`, { headers: { 'Authorization': 'Bearer ' + token } });
+          if (!projRes.ok) return;
+          const proj = await projRes.json();
+          const allExpRes = await fetch(`/experiments`, { headers: { 'Authorization': 'Bearer ' + token } });
+          if (!allExpRes.ok) return;
+          const experiments = await allExpRes.json();
+          const exp = experiments.find(e => e.title === proj.title && e.owner_id === proj.owner_id);
+          if (!exp) return;
+          const expRes = await fetch(`/experiments/${encodeURIComponent(exp.id)}/versions`, { headers: { 'Authorization': 'Bearer ' + token } });
+          if (!expRes.ok) return;
+          versions = await expRes.json();
+          if (!Array.isArray(versions) || versions.length === 0) return;
+          protocolVersion = versions.reduce((a, b) => {
+            if (!a.created_at) return b;
+            if (!b.created_at) return a;
+            return new Date(a.created_at) > new Date(b.created_at) ? a : b;
+          });
+          protocolVersionId = protocolVersion.id;
+          // Fetch step_map
+          const mapUrl = `/protocol-versions/${protocolVersionId}/step-map`;
+          const mapRes = await fetch(mapUrl, { headers: { 'Authorization': 'Bearer ' + token } });
+          if (!mapRes.ok) return;
+          const { step_map } = await mapRes.json();
+          if (!step_map || !step_map.nodes) {
+            document.getElementById('flow-canvas').innerHTML = '<div class="text-cyan-200 p-8">No flowchart found for this experiment.</div>';
+            return;
+          }
+          // Render nodes and connections (read-only)
+          const canvas = document.getElementById('flow-canvas');
+          canvas.innerHTML = '';
+          const nodeData = {};
+          const nodeMap = {};
+          // 1. Render nodes
+          (step_map.nodes || []).forEach(n => {
+            const node = document.createElement('div');
+            node.className = 'node holo-glow scanlines';
+            node.textContent = n.name || n.type;
+            node.style.position = 'absolute';
+            node.style.left = (n.x || 0) + 'px';
+            node.style.top = (n.y || 0) + 'px';
+            node.id = n.id;
+            node.draggable = false;
+            node.style.cursor = 'default';
+            // --- Node style mimic from experiment.html ---
+            node.style.minWidth = '180px';
+            node.style.maxWidth = '320px';
+            node.style.padding = '18px 22px';
+            node.style.borderRadius = '18px';
+            node.style.background = 'linear-gradient(120deg, rgba(10,30,40,0.98) 80%, rgba(0,255,255,0.08) 100%)';
+            node.style.boxShadow = '0 2px 24px 0 rgba(0,255,255,0.10), 0 0 0 1.5px rgba(0,255,255,0.18)';
+            node.style.border = '1.5px solid rgba(0,255,255,0.18)';
+            node.style.color = '#e0f7fa';
+            node.style.fontWeight = '600';
+            node.style.fontSize = '1.08rem';
+            node.style.letterSpacing = '0.01em';
+            node.style.textShadow = '0 1px 8px rgba(0,255,255,0.10)';
+            node.style.transition = 'box-shadow 0.3s, border 0.3s, background 0.3s, color 0.3s';
+            node.style.userSelect = 'none';
+            node.style.overflowWrap = 'break-word';
+            node.style.zIndex = '2';
+            // --- END mimic ---
+            // Color node based on status (async, but don't block)
+            (async () => {
+              let color = '';
+              let border = '';
+              let textColor = '';
+              try {
+                if (token && n.id) {
+                  const res = await fetch(`/steps/${encodeURIComponent(n.id)}`, { headers: { 'Authorization': 'Bearer ' + token } });
+                  if (res.ok) {
+                    const step = await res.json();
+                    // --- Status-based coloring ---
+                    if (step.done) {
+                      color = 'linear-gradient(120deg, rgba(0,255,180,0.18) 60%, rgba(0,255,255,0.08) 100%)';
+                      border = '2.5px solid #00ffb4';
+                      textColor = '#00ffb4';
+                    } else if (step.due_date) {
+                      const due = new Date(step.due_date);
+                      const now = new Date();
+                      const msLeft = due - now;
+                      if (msLeft < 0) {
+                        // Overdue
+                        color = 'linear-gradient(120deg, rgba(255,0,64,0.18) 60%, rgba(0,255,255,0.08) 100%)';
+                        border = '2.5px solid #ff4060';
+                        textColor = '#ff4060';
+                      } else if (msLeft < 1000*60*60*24*2) {
+                        // Nearly due (within 2 days)
+                        color = 'linear-gradient(120deg, rgba(255,180,0,0.18) 60%, rgba(0,255,255,0.08) 100%)';
+                        border = '2.5px solid #ffb400';
+                        textColor = '#ffb400';
+                      }
+                    }
+                  }
+                }
+              } catch (e) {}
+              if (color) node.style.background = color;
+              if (border) node.style.border = border;
+              if (textColor) node.style.color = textColor;
+            })();
+            canvas.appendChild(node);
+            nodeData[node.id] = { type: n.type, name: n.name };
+            nodeMap[n.id] = node;
+          });
+          // 2. Render connections
+          setTimeout(() => {
+            const flowContainer = document.querySelector('.flow-container');
+            const lines = [];
+            (step_map.connections || []).forEach(conn => {
+              const fromNode = nodeMap[conn.from];
+              const toNode = nodeMap[conn.to];
+              if (fromNode && toNode) {
+                const line = new LeaderLine(fromNode, toNode, { color: 'cyan', size: 2, startSocketGravity: 'auto', endSocketGravity: 'auto' });
+                // Force SVG to be absolutely positioned, max z-index, and pointer-events none
+                if (line && line.svg) {
+                  line.svg.style.position = 'absolute';
+                  line.svg.style.zIndex = '2147483647';
+                  line.svg.style.pointerEvents = 'none';
+                }
+                lines.push(line);
+              }
+            });
+            // Helper to re-apply styles to all LeaderLine SVGs
+            function enforceLeaderLineStyles() {
+              lines.forEach(line => {
+                if (line && line.svg) {
+                  line.svg.style.position = 'absolute';
+                  line.svg.style.zIndex = '2147483647';
+                  line.svg.style.pointerEvents = 'none';
+                }
+              });
+            }
+            // Update all lines on scroll/resize and re-apply styles
+            if (flowContainer) {
+              flowContainer.addEventListener('scroll', () => {
+                lines.forEach(line => line.position());
+                enforceLeaderLineStyles();
+              });
+            }
+            window.addEventListener('resize', () => {
+              lines.forEach(line => line.position());
+              enforceLeaderLineStyles();
+            });
+            // Also enforce styles after a short delay in case LeaderLine re-inserts SVGs
+            setTimeout(enforceLeaderLineStyles, 200);
+          }, 100);
+        } catch (e) {
+          document.getElementById('flow-canvas').innerHTML = '<div class="text-red-400 p-8">Failed to load flowchart.</div>';
+        }
+      })();
+    }
+  </script>
+</body>
+</html>

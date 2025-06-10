@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Futuristic Blueprint UI 2030</title>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+  <script src="https://kit.fontawesome.com/dac0a9835a.js" crossorigin="anonymous"></script>
+  <style>
+    body { font-family: 'Space Grotesk', sans-serif; }
+    .stroke-line { stroke: rgba(0,255,255,0.15); stroke-width: 0.5px; }
+    .glass { backdrop-filter: blur(14px) saturate(180%); background: rgba(10, 10, 30, 0.06); }
+    .holo-glow { box-shadow: 0 0 0.5px rgba(0,255,255,0.6), 0 0 8px rgba(0,255,255,0.2), 0 0 40px rgba(0,255,255,0.05); transition: box-shadow 0.4s ease-in-out; }
+    .holo-glow:hover { box-shadow: 0 0 1px rgba(0,255,255,0.9), 0 0 12px rgba(0,255,255,0.4), 0 0 60px rgba(0,255,255,0.1); }
+    .scanlines::before { content: ""; position: absolute; inset: 0;
+      background-image: repeating-linear-gradient(to bottom, rgba(255,255,255,0.02) 0px, transparent 1px, transparent 4px);
+      pointer-events: none; z-index: 10;
+    }
+    .flow-container { background: rgba(0,0,0,0.4); border: 0.5px solid rgba(0,255,255,0.2); overflow: auto; position: relative; }
+    .flow-grid { background-image: repeating-linear-gradient(0deg, rgba(0,255,255,0.1) 1px, transparent 1px),
+                   repeating-linear-gradient(90deg, rgba(0,255,255,0.1) 1px, transparent 1px);
+                  background-size: 50px 50px; }
+    .node { min-width: 120px; padding: 12px; background: rgba(20,20,40,0.8); border: 0.5px solid rgba(0,255,255,0.3); border-radius: 8px; color: #ccf; cursor: grab; position: absolute; user-select: none; }
+    .node.selected { border-color: cyan; }
+    .fullscreen-btn { position: absolute; top: 1rem; right: 1rem; z-index: 20; }
+    .drag-palette .node { position: relative; margin-bottom: 1rem; cursor: grab; }
+    .drag-palette { width: 200px; padding: 1rem; }
+        .editor, .preview { width: 100%; height: 300px; border: 0.5px solid rgba(0,255,255,0.3); border-radius: 8px; background: rgba(20,20,40,0.8); color: #ccf; padding: 1rem; }
+    .editor { resize: vertical; }
+    .preview { overflow: auto; }
+    .file-drop { border:2px dashed rgba(0,255,255,0.4); border-radius:8px; padding:2rem; text-align:center; background:rgba(10,10,20,0.4); cursor:pointer; }
+    .file-drop.dragover { background:rgba(10,10,30,0.6); }
+    .rating { display:flex; gap:.5rem; align-items:center; }
+    .rating input { accent-color:cyan; }
+
+  </style>
+  <!-- LeaderLine for arrows -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leader-line/1.0.7/leader-line.min.js"></script>
+</head>
+<body class="bg-black text-white antialiased overflow-x-hidden">
+
+  <nav class="fixed top-0 w-full flex justify-between items-center px-10 py-4 glass border-b border-cyan-500/10 z-50" style="z-index: 11;">
+    <a href="/" class="text-2xl font-bold tracking-wide text-cyan-300">atlantis [CODEX]</a>
+    <ul class="flex space-x-8 text-sm">
+      <li><a href="#" class="hover:text-cyan-400 transition">Home</a></li>
+      <li><a href="/kdmap.html" class="hover:text-cyan-400 transition">Frontier</a></li>
+      <li><a href="/chat.html" class="hover:text-cyan-400 transition">Chat</a></li>
+      <li><a href="/profile.html" class="hover:text-cyan-400 transition">Profile</a></li>
+    </ul>
+  </nav>
+  <!-- Funder Dashboard -->
+  <section id="funder-dashboard" class="py-20 relative">
+    <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+      <defs><pattern id="grid-fd" width="80" height="80" patternUnits="userSpaceOnUse"><path d="M80 0 L0 0 0 80" class="stroke-line" /></pattern></defs>
+      <rect width="100%" height="100%" fill="url(#grid-fd)" />
+    </svg>
+    <div class="text-center mb-12 relative z-10">
+      <h2 class="text-4xl font-bold text-cyan-200">Funder Dashboard</h2>
+      <p class="text-cyan-100/80">Manage grants, track budgets, and oversee project funding</p>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 max-w-7xl mx-auto relative z-10">
+      <!-- Panel Template -->
+      <template id="funder-panel-template">
+        <div class="glass p-8 rounded-2xl h-72 relative holo-glow scanlines transform-gpu hover:scale-105 transition-all duration-300" style="border: 0.5px solid rgba(0,255,255,0.2)">
+          <div class="relative h-full flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+              <i class="fas fa-gem text-4xl text-cyan-300"></i>
+              <span class="text-sm uppercase text-cyan-200 tracking-widest">Label</span>
+            </div>
+            <div class="text-center text-3xl font-bold text-cyan-100">Value</div>
+          </div>
+        </div>
+      </template>
+      <script>
+        const fdContainer = document.querySelector('#funder-dashboard .grid');
+        const iconsFD = ['fa-handshake','fa-coins','fa-calendar-check','fa-tasks','fa-chart-pie','fa-user-check'];
+        const labelsFD = ['Grants Awarded','Budget Remaining','Pending Applications','Upcoming Reviews','Funding Allocation','Approved Institutions'];
+        const valuesFD = ['42','$1.2M','18','5 reviews','74%','23'];
+        iconsFD.forEach((icon, i) => {
+          const node = document.importNode(document.getElementById('funder-panel-template').content, true);
+          node.querySelector('i').classList.replace('fa-gem', icon);
+          node.querySelector('span').textContent = labelsFD[i];
+          node.querySelector('.text-center').textContent = valuesFD[i];
+          fdContainer.appendChild(node);
+        });
+      </script>
+  </section>
+
+
+    <div class="h-32"></div>
+
+  <!-- Global Discovery Feed -->
+  <section id="global-discovery-feed" class="py-20 px-8 mx-auto relative z-10 max-w-6xl">
+    <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <pattern id="grid-discovery" width="80" height="80" patternUnits="userSpaceOnUse">
+          <path d="M80 0 L0 0 0 80" class="stroke-line" />
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#grid-discovery)" />
+    </svg>
+    <h2 class="text-3xl font-bold text-cyan-200 mb-6">Global Discovery Feed</h2>
+    <p class="text-cyan-100/80 mb-8">AI-curated experiments in your area and suggested collaborators.</p>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="discovery-feed-list">
+      <!-- Feed items will be injected here -->
+    </div>
+  </section>
+  <script>
+    // --- Global Discovery Feed Logic ---
+    const discoveryExperiments = [
+      {
+        title: "Rapid mRNA Vaccine Prototyping",
+        desc: "A new platform for rapid prototyping of mRNA vaccines, enabling faster pandemic response.",
+        field: "Biology",
+        status: "Ongoing",
+        lead: "Dr. Jane Doe",
+        tags: ["mRNA", "pandemic", "vaccine"],
+        aiScore: 9.1
+      },
+      {
+        title: "AI-Driven Protein Folding",
+        desc: "Leveraging deep learning to predict protein structures with high accuracy.",
+        field: "AI",
+        status: "Significant Result",
+        lead: "Dr. Alan Turing",
+        tags: ["protein", "deep learning", "biology"],
+        aiScore: 9.4
+      },
+      {
+        title: "Open Energy Storage Models",
+        desc: "Open-source models for optimizing grid-scale energy storage and renewables integration.",
+        field: "Energy",
+        status: "Needs Funding",
+        lead: "Dr. Lisa Su",
+        tags: ["energy", "open-source", "storage"],
+        aiScore: 8.7
+      },
+      {
+        title: "Neurodegeneration Early Detection",
+        desc: "AI-powered biomarkers for early detection of neurodegenerative diseases.",
+        field: "Neuroscience",
+        status: "Ongoing",
+        lead: "Dr. Wang",
+        tags: ["AI", "biomarkers", "health"],
+        aiScore: 8.9
+      },
+      {
+        title: "Transparent AI Alignment Audits",
+        desc: "Framework for transparent, reproducible audits of AI alignment research.",
+        field: "AI",
+        status: "AI: Needs More Research",
+        lead: "Dr. Patel",
+        tags: ["alignment", "audit", "transparency"],
+        aiScore: 8.3
+      },
+      {
+        title: "Climate-Resilient Crop Engineering",
+        desc: "Genetic engineering for crops resilient to climate extremes.",
+        field: "Biology",
+        status: "Statistically Insignificant",
+        lead: "Dr. Smith",
+        tags: ["climate", "crops", "genetics"],
+        aiScore: 7.8
+      }
+    ];
+
+    const suggestedCollaborators = [
+      { name: "Dr. Jane Doe", field: "Biology", expertise: ["mRNA", "pandemics"], avatar: "🧬" },
+      { name: "Dr. Alan Turing", field: "AI", expertise: ["deep learning", "alignment"], avatar: "🤖" },
+      { name: "Dr. Lisa Su", field: "Energy", expertise: ["storage", "optimization"], avatar: "🔋" },
+      { name: "Dr. Wang", field: "Neuroscience", expertise: ["biomarkers", "AI"], avatar: "🧠" },
+      { name: "Dr. Patel", field: "AI", expertise: ["audit", "transparency"], avatar: "📊" },
+      { name: "Dr. Smith", field: "Biology", expertise: ["genetics", "climate"], avatar: "🌱" }
+    ];
+
+    function renderDiscoveryFeed() {
+      const list = document.getElementById('discovery-feed-list');
+      list.innerHTML = '';
+      // Experiments
+      discoveryExperiments.forEach(exp => {
+        const div = document.createElement('div');
+        div.className = "glass rounded-2xl p-6 holo-glow scanlines flex flex-col gap-2";
+        div.innerHTML = `
+          <div class="flex items-center gap-2 mb-1">
+            <span class="inline-block w-2 h-2 rounded-full mr-2" style="background:${{
+              "Ongoing":"#ff9800",
+              "Significant Result":"#4caf50",
+              "Needs Funding":"#ffeb3b",
+              "Statistically Insignificant":"#ff1744",
+              "AI: Needs More Research":"#2196f3"
+            }[exp.status] || "#ccc"}"></span>
+            <span class="text-cyan-100 font-semibold text-lg">${exp.title}</span>
+          </div>
+          <div class="text-cyan-200 text-sm mb-1">${exp.desc}</div>
+          <div class="flex flex-wrap gap-2 text-xs mb-1">
+            <span class="bg-cyan-900 px-2 py-1 rounded">${exp.field}</span>
+            ${exp.tags.map(t=>`<span class="bg-cyan-800 px-2 py-1 rounded">${t}</span>`).join('')}
+          </div>
+          <div class="text-cyan-100/80 text-xs mb-1">Lead: <span class="text-cyan-300">${exp.lead}</span></div>
+          <div class="text-cyan-400 text-xs mb-1">AI Score: <span class="font-bold">${exp.aiScore}</span></div>
+          <button class="mt-2 px-4 py-2 glass holo-glow rounded border border-cyan-400/30 hover:border-cyan-300 transition text-cyan-200 text-sm">View Experiment</button>
+        `;
+        list.appendChild(div);
+      });
+      // Collaborators
+      const colDiv = document.createElement('div');
+      colDiv.className = "glass rounded-2xl p-6 holo-glow scanlines flex flex-col gap-2";
+      colDiv.innerHTML = `
+        <div class="text-cyan-100 font-semibold text-lg mb-2">Suggested Collaborators</div>
+        <div class="flex flex-col gap-3">
+          ${suggestedCollaborators.map(c => `
+            <div class="flex items-center gap-3">
+              <span class="text-2xl">${c.avatar}</span>
+              <div>
+                <div class="text-cyan-200 font-semibold">${c.name}</div>
+                <div class="text-cyan-100/80 text-xs">${c.field} &mdash; ${c.expertise.join(', ')}</div>
+                <button class="mt-1 px-3 py-1 glass rounded border border-cyan-400/20 text-cyan-200 hover:border-cyan-300 text-xs">Connect</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+      list.appendChild(colDiv);
+    }
+    renderDiscoveryFeed();
+  </script>
+
+    <div class="h-32"></div>
+
+    <!-- Funder: Applicant Selection Interface -->
+    <section id="funder-applicant-selection" class="py-20 px-8 mx-auto relative z-10 max-w-5xl">
+      <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg" style="z-index:-1;">
+        <defs>
+          <pattern id="grid-funder-apps" width="80" height="80" patternUnits="userSpaceOnUse">
+            <path d="M80 0 L0 0 0 80" class="stroke-line" />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#grid-funder-apps)" />
+      </svg>
+      <h2 class="text-3xl font-bold text-cyan-200 mb-6">Select Applicants for Grant</h2>
+      <div class="mb-6">
+        <label class="text-cyan-100/80 mr-2">Grant:</label>
+        <select id="funder-grant-select" class="p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent">
+          <option value="AI for Good Challenge">AI for Good Challenge</option>
+          <option value="NextGen Science Grant">NextGen Science Grant</option>
+          <option value="Open Science Accelerator">Open Science Accelerator</option>
+        </select>
+      </div>
+      <div id="funder-applicant-list" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Applicants will be rendered here -->
+      </div>
+    </section>
+
+    <div class="h-32"></div>
+
+    <!-- Funder: Grant Progress Monitoring Interface -->
+    <section id="funder-grant-progress" class="py-20 px-8 mx-auto relative z-10 max-w-4xl">
+      <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg" style="z-index:-1;">
+        <defs>
+          <pattern id="grid-funder-progress" width="80" height="80" patternUnits="userSpaceOnUse">
+            <path d="M80 0 L0 0 0 80" class="stroke-line" />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#grid-funder-progress)" />
+      </svg>
+      <h2 class="text-3xl font-bold text-cyan-200 mb-6">Monitor Grant Progress</h2>
+      <div class="mb-6">
+        <label class="text-cyan-100/80 mr-2">Funded Project:</label>
+        <select id="funder-progress-project-select" class="p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent">
+          <!-- Populated by JS -->
+        </select>
+      </div>
+      <div id="funder-progress-details" class="glass rounded-2xl p-8 holo-glow scanlines">
+        <!-- Progress details will be rendered here -->
+      </div>
+    </section>
+
+    <script>
+      // --- Funder Applicant Selection Data ---
+      const grantApplicants = {
+        "AI for Good Challenge": [
+          {
+            applicant: "Dr. Jane Doe",
+            project: "Open-Source Pandemic Modeling",
+            fit: "Our project leverages AI to model and predict pandemic spread, directly aligned with the grant's mission.",
+            usage: "Funds will be used for data acquisition and model validation.",
+            budget: 120000,
+            reproducibility: 4.2,
+            impact: 4.7,
+            difficulty: 2.9,
+            aiScore: 9.2
+          },
+          {
+            applicant: "Dr. Alan Turing",
+            project: "AI Alignment Toolkit",
+            fit: "Toolkit for safe and robust AI, with open-source components for the community.",
+            usage: "Funding will support software development and workshops.",
+            budget: 95000,
+            reproducibility: 3.9,
+            impact: 4.9,
+            difficulty: 3.2,
+            aiScore: 8.8
+          }
+        ],
+        "NextGen Science Grant": [
+          {
+            applicant: "Dr. Lisa Su",
+            project: "Energy Storage Optimization",
+            fit: "Optimizing battery storage for renewable energy, high impact for energy sector.",
+            usage: "Funds for hardware prototyping and field tests.",
+            budget: 180000,
+            reproducibility: 4.5,
+            impact: 4.2,
+            difficulty: 3.8,
+            aiScore: 9.0
+          }
+        ],
+        "Open Science Accelerator": [
+          {
+            applicant: "Dr. Jane Doe",
+            project: "Open-Source Pandemic Modeling",
+            fit: "Open-source tools for pandemic modeling, improving reproducibility.",
+            usage: "Funds for documentation and open data releases.",
+            budget: 120000,
+            reproducibility: 4.2,
+            impact: 4.7,
+            difficulty: 2.9,
+            aiScore: 8.5
+          }
+        ]
+      };
+
+      // --- Funder Grant Progress Data ---
+      const fundedProjects = [
+        {
+          project: "Open-Source Pandemic Modeling",
+          applicant: "Dr. Jane Doe",
+          grant: "AI for Good Challenge",
+          steps: [
+            { name: "Data Collection", completed: true },
+            { name: "Model Development", completed: true },
+            { name: "Validation", completed: false },
+            { name: "Deployment", completed: false }
+          ]
+        },
+        {
+          project: "Energy Storage Optimization",
+          applicant: "Dr. Lisa Su",
+          grant: "NextGen Science Grant",
+          steps: [
+            { name: "Prototype Design", completed: true },
+            { name: "Lab Testing", completed: false },
+            { name: "Field Deployment", completed: false }
+          ]
+        }
+      ];
+
+      // --- Render Applicant Selection ---
+      function renderApplicantList(grantName) {
+        const container = document.getElementById('funder-applicant-list');
+        container.innerHTML = '';
+        let applicants = grantApplicants[grantName] || [];
+        // Sort by AI score descending
+        applicants = applicants.slice().sort((a, b) => b.aiScore - a.aiScore);
+        applicants.forEach(app => {
+          const div = document.createElement('div');
+          div.className = 'glass rounded-2xl p-6 holo-glow scanlines flex flex-col gap-2';
+          div.innerHTML = `
+            <div class="text-xl font-semibold text-cyan-100 mb-1">${app.project}</div>
+            <div class="text-cyan-200 mb-1">Applicant: <span class="text-cyan-300">${app.applicant}</span></div>
+            <div class="flex gap-4 mb-1">
+              <div>Budget: <span class="text-cyan-300">$${app.budget.toLocaleString()}</span></div>
+              <div>Reproducibility: <span class="text-cyan-200">${app.reproducibility}</span></div>
+              <div>Impact: <span class="text-cyan-200">${app.impact}</span></div>
+              <div>Difficulty: <span class="text-cyan-200">${app.difficulty}</span></div>
+            </div>
+            <div class="mb-1">AI Score: <span class="text-cyan-400 font-bold">${app.aiScore}</span></div>
+            <div class="mb-1"><span class="text-cyan-100/80">Fit:</span> ${app.fit}</div>
+            <div class="mb-1"><span class="text-cyan-100/80">Usage:</span> ${app.usage}</div>
+            <button class="mt-2 px-4 py-2 glass holo-glow rounded border border-cyan-400/30 hover:border-cyan-300 transition text-cyan-200">Select Applicant</button>
+          `;
+          container.appendChild(div);
+        });
+      }
+      document.getElementById('funder-grant-select').addEventListener('change', function() {
+        renderApplicantList(this.value);
+      });
+      // Initial render
+      renderApplicantList(document.getElementById('funder-grant-select').value);
+
+      // --- Render Grant Progress Monitoring ---
+      function renderProgressProjectOptions() {
+        const select = document.getElementById('funder-progress-project-select');
+        select.innerHTML = '';
+        fundedProjects.forEach((p, idx) => {
+          const opt = document.createElement('option');
+          opt.value = idx;
+          opt.textContent = `${p.project} (${p.applicant})`;
+          select.appendChild(opt);
+        });
+      }
+      function renderProgressDetails(idx) {
+        const details = document.getElementById('funder-progress-details');
+        const p = fundedProjects[idx];
+        if (!p) {
+          details.innerHTML = '<div class="text-cyan-100/80">No project selected.</div>';
+          return;
+        }
+        details.innerHTML = `
+          <div class="mb-2 text-cyan-100 font-semibold text-lg">${p.project}</div>
+          <div class="mb-2 text-cyan-200">Lead: <span class="text-cyan-300">${p.applicant}</span></div>
+          <div class="mb-4 text-cyan-200">Grant: <span class="text-cyan-300">${p.grant}</span></div>
+          <div>
+            <div class="mb-2 text-cyan-100/80">Project Steps:</div>
+            <ul class="list-disc list-inside text-cyan-100/80">
+              ${p.steps.map(step => `
+                <li>
+                  <span class="${step.completed ? 'text-green-400' : 'text-cyan-200'}">${step.name}</span>
+                  ${step.completed ? '<i class="fas fa-check-circle text-green-400 ml-2"></i>' : ''}
+                </li>
+              `).join('')}
+            </ul>
+          </div>
+        `;
+      }
+      renderProgressProjectOptions();
+      renderProgressDetails(0);
+      document.getElementById('funder-progress-project-select').addEventListener('change', function() {
+        renderProgressDetails(this.value);
+      });
+    </script>
+
+    <div class="h-32"></div>
+
+    <!-- Funder: Grant Management Interface -->
+    <section id="funder-grant-management" class="py-20 px-8 mx-auto relative z-10 max-w-5xl">
+      <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg" style="z-index:-1;">
+        <defs>
+          <pattern id="grid-funder-grant-mgmt" width="80" height="80" patternUnits="userSpaceOnUse">
+            <path d="M80 0 L0 0 0 80" class="stroke-line" />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#grid-funder-grant-mgmt)" />
+      </svg>
+      <h2 class="text-3xl font-bold text-cyan-200 mb-6">Manage Grants</h2>
+      <div class="glass rounded-2xl p-8 holo-glow scanlines mb-8">
+        <form id="grant-mgmt-form" class="flex flex-col gap-4">
+          <div class="flex flex-col md:flex-row gap-4">
+            <div class="flex-1">
+              <label class="block text-cyan-200 mb-1">Grant Name</label>
+              <input type="text" id="grant-mgmt-name" class="w-full p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent" required>
+            </div>
+            <div>
+              <label class="block text-cyan-200 mb-1">Funding (USD)</label>
+              <input type="number" id="grant-mgmt-funding" class="w-full p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent" required>
+            </div>
+            <div class="flex-1">
+              <label class="block text-cyan-200 mb-1">Description</label>
+              <input type="text" id="grant-mgmt-desc" class="w-full p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent" required>
+            </div>
+          </div>
+          <div>
+            <label class="block text-cyan-200 mb-1">Grant Application Questions</label>
+            <div id="grant-mgmt-questions-list" class="flex flex-col gap-2 mb-2"></div>
+            <div class="flex gap-2">
+              <input type="text" id="grant-mgmt-question-input" class="flex-1 p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent" placeholder="Add a question...">
+              <button type="button" id="grant-mgmt-add-question" class="px-3 py-2 glass rounded border border-cyan-400/20 text-cyan-200 hover:border-cyan-300">Add Question</button>
+            </div>
+          </div>
+          <div class="flex gap-2 mt-2">
+            <button type="submit" id="grant-mgmt-submit" class="px-4 py-2 glass holo-glow rounded border border-cyan-400/30 hover:border-cyan-300 transition text-cyan-200">Add Grant</button>
+            <button type="button" id="grant-mgmt-cancel" class="px-4 py-2 glass rounded border border-cyan-400/20 text-cyan-200 hidden">Cancel</button>
+          </div>
+        </form>
+      </div>
+      <div class="glass rounded-2xl p-8 holo-glow scanlines">
+        <h3 class="text-xl font-semibold text-cyan-100 mb-4">All Grants</h3>
+        <table class="min-w-full text-cyan-100/90">
+          <thead>
+            <tr class="border-b border-cyan-400/20">
+              <th class="py-2 px-4 text-left">Name</th>
+              <th class="py-2 px-4 text-left">Funding</th>
+              <th class="py-2 px-4 text-left">Description</th>
+              <th class="py-2 px-4 text-left">Questions</th>
+              <th class="py-2 px-4 text-left">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="grant-mgmt-table-body">
+            <!-- Populated by JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <script>
+      // Grant management state (simulate persistent storage)
+      let grants = JSON.parse(localStorage.getItem('funder-grants')) || [
+        { name: "AI for Good Challenge", funding: 100000, desc: "Support for projects using AI to address global challenges in health, climate, and education.", questions: ["Why is your project a good fit for this grant?", "How will you use the funding?"] },
+        { name: "NextGen Science Grant", funding: 250000, desc: "For early-stage, high-impact research in biotechnology, energy, and advanced computing.", questions: ["Describe your innovation.", "What is your expected impact?"] },
+        { name: "Open Science Accelerator", funding: 50000, desc: "Grants for open-source tools and reproducibility in scientific research.", questions: ["How will you ensure reproducibility?", "How will you share your results?"] }
+      ];
+      let editIdx = null;
+      let currentQuestions = [];
+
+      function renderGrantMgmtQuestions() {
+        const list = document.getElementById('grant-mgmt-questions-list');
+        list.innerHTML = '';
+        currentQuestions.forEach((q, i) => {
+          const div = document.createElement('div');
+          div.className = "flex items-center gap-2";
+          div.innerHTML = `<span class="flex-1">${q}</span>
+            <button type="button" class="text-red-400 hover:text-red-300 text-xs" onclick="removeGrantQuestion(${i})"><i class="fas fa-times"></i></button>`;
+          list.appendChild(div);
+        });
+      }
+      window.removeGrantQuestion = function(idx) {
+        currentQuestions.splice(idx, 1);
+        renderGrantMgmtQuestions();
+      };
+
+      document.getElementById('grant-mgmt-add-question').addEventListener('click', function() {
+        const input = document.getElementById('grant-mgmt-question-input');
+        const val = input.value.trim();
+        if (val) {
+          currentQuestions.push(val);
+          input.value = '';
+          renderGrantMgmtQuestions();
+        }
+      });
+
+      function renderGrantMgmtTable() {
+        const tbody = document.getElementById('grant-mgmt-table-body');
+        tbody.innerHTML = '';
+        grants.forEach((g, idx) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="py-2 px-4">${g.name}</td>
+            <td class="py-2 px-4">$${g.funding.toLocaleString()}</td>
+            <td class="py-2 px-4">${g.desc}</td>
+            <td class="py-2 px-4">${(g.questions || []).map(q => `<div class="mb-1">${q}</div>`).join('')}</td>
+            <td class="py-2 px-4 flex gap-2">
+              <button class="px-2 py-1 glass rounded border border-cyan-400/20 text-cyan-200 hover:border-cyan-300" onclick="editGrant(${idx})">Edit</button>
+              <button class="px-2 py-1 glass rounded border border-red-400/20 text-red-300 hover:border-red-300" onclick="removeGrant(${idx})">Remove</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+      renderGrantMgmtTable();
+
+      document.getElementById('grant-mgmt-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const name = document.getElementById('grant-mgmt-name').value.trim();
+        const funding = parseInt(document.getElementById('grant-mgmt-funding').value, 10);
+        const desc = document.getElementById('grant-mgmt-desc').value.trim();
+        if (editIdx === null) {
+          grants.push({ name, funding, desc, questions: [...currentQuestions] });
+        } else {
+          grants[editIdx] = { name, funding, desc, questions: [...currentQuestions] };
+        }
+        localStorage.setItem('funder-grants', JSON.stringify(grants));
+        renderGrantMgmtTable();
+        this.reset();
+        currentQuestions = [];
+        renderGrantMgmtQuestions();
+        document.getElementById('grant-mgmt-submit').textContent = "Add Grant";
+        document.getElementById('grant-mgmt-cancel').classList.add('hidden');
+        editIdx = null;
+      });
+
+      window.removeGrant = function(idx) {
+        if (confirm("Remove this grant?")) {
+          grants.splice(idx, 1);
+          localStorage.setItem('funder-grants', JSON.stringify(grants));
+          renderGrantMgmtTable();
+        }
+      };
+
+      window.editGrant = function(idx) {
+        const g = grants[idx];
+        document.getElementById('grant-mgmt-name').value = g.name;
+        document.getElementById('grant-mgmt-funding').value = g.funding;
+        document.getElementById('grant-mgmt-desc').value = g.desc;
+        currentQuestions = [...(g.questions || [])];
+        renderGrantMgmtQuestions();
+        document.getElementById('grant-mgmt-submit').textContent = "Save Changes";
+        document.getElementById('grant-mgmt-cancel').classList.remove('hidden');
+        editIdx = idx;
+      };
+
+      document.getElementById('grant-mgmt-cancel').addEventListener('click', function() {
+        document.getElementById('grant-mgmt-form').reset();
+        currentQuestions = [];
+        renderGrantMgmtQuestions();
+        document.getElementById('grant-mgmt-submit').textContent = "Add Grant";
+        this.classList.add('hidden');
+        editIdx = null;
+      });
+    </script>
+
+    <div class="h-32"></div>
+
+  <footer class="py-8 text-center glass mt-16 relative z-10 border-t border-cyan-500/10">
+    <p class="text-sm text-cyan-200">&copy; 2025 Atlantis. All rights reserved.</p>
+  </footer>
+
+</body>
+
+</html>

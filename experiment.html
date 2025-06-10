@@ -1,0 +1,1819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Futuristic Blueprint UI 2030</title>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+  <script src="https://kit.fontawesome.com/dac0a9835a.js" crossorigin="anonymous"></script>
+  <style>
+    body { font-family: 'Space Grotesk', sans-serif; }
+    .stroke-line { stroke: rgba(0,255,255,0.15); stroke-width: 0.5px; }
+    .glass { backdrop-filter: blur(14px) saturate(180%); background: rgba(10, 10, 30, 0.06); }
+    .holo-glow { box-shadow: 0 0 0.5px rgba(0,255,255,0.6), 0 0 8px rgba(0,255,255,0.2), 0 0 40px rgba(0,255,255,0.05); transition: box-shadow 0.4s ease-in-out; }
+    .holo-glow:hover { box-shadow: 0 0 1px rgba(0,255,255,0.9), 0 0 12px rgba(0,255,255,0.4), 0 0 60px rgba(0,255,255,0.1); }
+    .scanlines::before { content: ""; position: absolute; inset: 0;
+      background-image: repeating-linear-gradient(to bottom, rgba(255,255,255,0.02) 0px, transparent 1px, transparent 4px);
+      pointer-events: none; z-index: 10;
+    }
+    /* --- Curved Bottom Bar --- */
+    .bottom-bar {
+      position: fixed;
+      left: 50%;
+      bottom: 30px;
+      transform: translateX(-50%);
+      z-index: 2000;
+      display: flex;
+      flex-direction: row;
+      gap: 1.5rem;
+      background: rgba(10,20,40,0.7);
+      border-radius: 2rem 2rem 0 0;
+      padding: 1.5rem 2.5rem 1.2rem 2.5rem;
+      box-shadow: 0 0 24px 2px rgba(0,255,255,0.08);
+      border: 1.5px solid rgba(0,255,255,0.18);
+      align-items: center;
+      pointer-events: auto;
+      min-width: 420px;
+      max-width: 900px;
+    }
+    .bottom-bar .sidebar-btn {
+      width: 48px; height: 48px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 50%;
+      background: rgba(0,255,255,0.08);
+      color: #67e8f9;
+      font-size: 1.5rem;
+      border: 1.5px solid transparent;
+      transition: background 0.2s, border 0.2s, color 0.2s;
+      cursor: pointer;
+    }
+    .bottom-bar .sidebar-btn.active, .bottom-bar .sidebar-btn:hover {
+      background: rgba(0,255,255,0.18);
+      color: #fff;
+      border-color: #22d3ee;
+    }
+    @media (max-width: 900px) {
+      .bottom-bar { min-width: 0; padding: 0.7rem 0.2rem 0.7rem 0.2rem; }
+      .bottom-bar .sidebar-btn { width: 38px; height: 38px; font-size: 1.1rem; }
+    }
+    /* --- ENHANCEMENT: Flowchart node size --- */
+    .flow-container .node {
+      min-width: 120px;
+      min-height: 56px;
+      padding: 18px 28px;
+      font-size: 1.25rem;
+      border-radius: 1.2rem;
+      text-align: center;
+      cursor: pointer;
+      margin-bottom: 8px;
+      background: rgba(0,255,255,0.08);
+      color: #aefeff;
+      border: 1.5px solid rgba(0,255,255,0.18);
+      box-shadow: 0 0 12px 0 rgba(0,255,255,0.10);
+      user-select: none;
+      z-index: 2;
+    }
+    .drag-palette .node {
+      min-width: 110px;
+      min-height: 48px;
+      font-size: 1.1rem;
+      padding: 14px 20px;
+      border-radius: 1rem;
+      margin-bottom: 12px;
+    }
+    .flow-container .node.selected {
+      outline: 3px solid #22d3ee;
+      outline-offset: 2px;
+      background: rgba(0,255,255,0.18);
+      color: #fff;
+    }
+    /* --- ENHANCEMENT: Sticky/fixed shoulder panel --- */
+    #shoulder-panel {
+      position: fixed !important;
+      right: 0;
+      top: 64px; /* match header height (nav is 64px) */
+      height: calc(100vh - 64px);
+      width: 340px;
+      background: rgba(10,20,40,0.97);
+      border-left: 1.5px solid rgba(0,255,255,0.18);
+      box-shadow: -4px 0 32px 0 rgba(0,255,255,0.08);
+      z-index: 3000;
+      transition: opacity 0.3s cubic-bezier(.4,2,.6,1),visibility 0.3s cubic-bezier(.4,2,.6,1);
+      padding: 36px 28px 28px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+      opacity: 0;
+      visibility: hidden;
+    }
+    #shoulder-panel.visible {
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
+    #close-shoulder {
+      position: absolute;
+      top: 18px;
+      left: -44px;
+      background: rgba(0,255,255,0.12);
+      border: none;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      color: cyan;
+      font-size: 20px;
+      cursor: pointer;
+      box-shadow: 0 0 8px 0 rgba(0,255,255,0.2);
+    }
+    #open-shoulder {
+      position: fixed !important;
+      right: 350px;
+      top: 120px;
+      background: rgba(0,255,255,0.12);
+      border: none;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      color: cyan;
+      font-size: 20px;
+      cursor: pointer;
+      box-shadow: 0 0 8px 0 rgba(0,255,255,0.2);
+      z-index: 201;
+    }
+    /* --- Ensure main view always covers full desktop and chat doesn't overlap sidebar --- */
+    .view-section {
+      min-height: 100vh;
+      width: 100vw;
+      position: relative;
+      box-sizing: border-box;
+      padding-right: 110px; /* leave space for sidebar on desktop */
+    }
+    @media (max-width: 900px) {
+      .bottom-bar { min-width: 0; padding: 0.7rem 0.2rem 0.7rem 0.2rem; }
+      .bottom-bar .sidebar-btn { width: 38px; height: 38px; font-size: 1.1rem; }
+      #shoulder-panel { width: 100vw; left: 0; right: 0; bottom: 0; height: 60vh; border-radius: 0 0 2rem 2rem; }
+      #open-shoulder { right: 20px; top: 20px; }
+      .view-section { padding-right: 0; }
+    }
+    /* --- Debugging: Show all elements in viewport --- */
+    /* html, body, .view-section, #flowchart, #flow-canvas {
+      outline: 1px solid red;
+    } */
+    /* --- Ensure proper stacking context and visibility --- */
+    /* .view-section {
+      position: relative;
+      z-index: 1;
+    }
+    #flowchart, #flow-canvas {
+      position: relative;
+      z-index: 0;
+    } */
+    .view-only .arrow-overlay { display: none !important; }
+  </style>
+  <!-- LeaderLine for arrows -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leader-line/1.0.7/leader-line.min.js"></script>
+  <!-- Ace Editor CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.3/ace.js"></script>
+  <!-- Marked.js for Markdown parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <!-- html2pdf CDN for PDF rendering -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body class="bg-black text-white antialiased overflow-x-hidden">
+  <main style="min-height: 100vh;">
+    <!-- Curved Bottom Bar (horizontal, replaces sidebar) -->
+    <div class="bottom-bar">
+      <button class="sidebar-btn active" data-view="flow" title="Experiment Hub"><i class="fas fa-project-diagram"></i></button>
+      <button class="sidebar-btn" data-view="chat" title="Project Chat"><i class="fas fa-comments"></i></button>
+      <button class="sidebar-btn" data-view="notebook" title="Lab Notebook"><i class="fas fa-book-medical"></i></button>
+      <button class="sidebar-btn" data-view="grants" title="Grant Application"><i class="fas fa-hand-holding-usd"></i></button>
+      <button class="sidebar-btn" data-view="editor" title="Paper Editor"><i class="fas fa-file-alt"></i></button>
+      <a href="#" id="settings-link" class="sidebar-btn" title="Experiment Settings" style="display:flex;align-items:center;justify-content:center;"><i class="fas fa-cog"></i></a>
+    </div>
+    <div style="flex: 1; min-width: 0;">
+      <!-- Flowchart View -->
+      <section id="view-flow" class="view-section">
+        <section id="flowchart" class="relative py-20" style="padding-top: 1rem;">
+          <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg" style="width: 100vw; height: 1800px; min-height: 1200px;">
+            <defs><pattern id="grid-fc" width="80" height="80" patternUnits="userSpaceOnUse"><path d="M80 0 L0 0 0 80" class="stroke-line"/></pattern></defs>
+            <rect width="100%" height="100%" fill="url(#grid-fc)" />
+          </svg>
+          <div class="text-center mb-12 relative z-10 flex flex-col items-center" style="display: none;">
+            <div id="experiment-title" class="text-base text-gray-300 mb-1" style="letter-spacing:0.01em;"></div>
+            <h2 class="text-4xl font-bold text-cyan-200">Experiment Hub</h2>
+            <p class="text-cyan-100/80">Drag steps in, click one node then another to draw multiple connections, double-click to rename.</p>
+            <button id="show-experiment-stats" class="mt-4 px-5 py-2 glass holo-glow rounded-lg border border-cyan-400/30 hover:border-cyan-300 transition text-cyan-200 flex items-center gap-2" style="display:inline-flex;">
+              <i class="fas fa-chart-bar"></i> Experiment Stats
+            </button>
+          </div>
+          <div class="max-w-screen-xl mx-auto relative z-10 flex" style="height: 1200px;">
+            <div class="flow-palette-menu glass holo-glow scanlines" id="flow-palette-menu" style="position:absolute; top:32px; left:50px; z-index:100; min-width:170px; padding:24px 20px 16px 20px; border-radius:18px; box-shadow:0 8px 32px 0 rgba(0,255,255,0.08); display:flex; flex-direction:column; align-items:center; gap:12px; transition:opacity 0.2s, visibility 0.2s;">
+              <button id="hide-flow-palette" title="Hide step menu" style="position:absolute; top:8px; right:8px; background:rgba(0,255,255,0.10); border:none; border-radius:50%; width:28px; height:28px; color:cyan; font-size:16px; cursor:pointer;"><i class="fas fa-times"></i></button>
+              <button id="flow-palette-info" title="How to use the canvas" style="position:absolute; top:8px; left:8px; background:rgba(0,255,255,0.10); border:none; border-radius:50%; width:28px; height:28px; color:cyan; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center;"><i class="fas fa-info-circle"></i></button>
+              <h3 class="text-cyan-200 mb-2 text-base font-semibold" style="margin-bottom:8px;">Step Block</h3>
+              <div class="node holo-glow" draggable="false" data-type="step" style="cursor:default; opacity:0.7;">Step</div>
+              <button id="show-experiment-stats" class="mt-2 px-5 py-2 glass holo-glow rounded-lg border border-cyan-400/30 hover:border-cyan-300 transition text-cyan-200 flex items-center gap-2" style="display:inline-flex;">
+                <i class="fas fa-chart-bar"></i> Experiment Stats
+              </button>
+            </div>
+            <button id="show-flow-palette" title="Show step menu" style="position:absolute; top:36px; left:50px; background:rgba(0,255,255,0.10); border:none; border-radius:50%; width:36px; height:36px; color:cyan; font-size:20px; cursor:pointer; display:none; z-index:101;"><i class="fas fa-plus"></i></button>
+            <div class="flow-container flow-grid flex-1 ml-8 relative overflow-auto" style="height:100%; min-width:0;">
+              <div id="flow-canvas" tabindex="0" style="position:relative; width:3200px; height:1800px;">
+                <button class="fullscreen-btn glass p-2 rounded holo-glow" onclick="toggleFullScreen()"><i class="fas fa-expand" aria-hidden="true"></i></button>
+              </div>
+              <!-- Shoulder Stats Panel -->
+              <div id="shoulder-panel" class="" style="position:absolute; right:0; height:100%; width:320px; background:rgba(10,20,40,0.95); border-left:1px solid rgba(0,255,255,0.15); box-shadow:-4px 0 24px 0 rgba(0,255,255,0.05); z-index:30; transition:opacity 0.3s cubic-bezier(.4,2,.6,1),visibility 0.3s cubic-bezier(.4,2,.6,1); padding:32px 24px 24px 24px; display:flex; flex-direction:column; gap:24px; opacity:0; visibility:hidden; top: 0px;">
+                <button id="close-shoulder" style="position:absolute; top:16px; left:-44px; background:rgba(0,255,255,0.12); border:none; border-radius:50%; width:36px; height:36px; color:cyan; font-size:20px; cursor:pointer; box-shadow:0 0 8px 0 rgba(0,255,255,0.2);"><i class="fas fa-times" aria-hidden="true"></i></button>
+                <h3 style="color:cyan; font-size:1.3rem; font-weight:700; margin-bottom:8px;">Experiment Stats</h3>
+                <div style="display:flex; flex-direction:column; gap:12px; font-size:1.05rem;">
+                  <div><span style="color:#7fffd4;">Reproducibility:</span> <span id="shoulder-repro">4.2</span></div>
+                  <div><span style="color:#7fffd4;">Impact:</span> <span id="shoulder-impact">4.7</span></div>
+                  <div><span style="color:#7fffd4;">Difficulty:</span> <span id="shoulder-diff">2.9</span></div>
+                  <div><span style="color:#7fffd4;">Est. Budget:</span> <span id="shoulder-budget">$120,000</span></div>
+                  <div><span style="color:#7fffd4;">Eligible Grants:</span> <span id="shoulder-grants">5</span></div>
+                  <div><span style="color:#7fffd4;">Lead Scientist:</span> <span id="shoulder-lead">Dr. Smith</span></div>
+                  <button id="grade-experiment-btn" class="mt-4 px-4 py-2 glass holo-glow rounded-lg border border-cyan-400/30 hover:border-cyan-300 transition text-cyan-200" style="margin-top:18px;">Grade Experiment</button>
+                </div>
+              </div>
+              <button id="open-shoulder" style="position:absolute; right:-44px; top:32px; background:rgba(0,255,255,0.12); border:none; border-radius:50%; width:36px; height:36px; color:cyan; font-size:20px; cursor:pointer; box-shadow:0 0 8px 0 rgba(0,255,255,0.2); z-index:31;"><i class="fas fa-chart-bar" aria-hidden="true"></i></button>
+            </div>
+          </div>
+        </section>
+        <script>
+          // --- Flowchart logic (fully restored interactive version) ---
+          // --- Flow Steps Palette Menu Logic ---
+          const flowPaletteMenu = document.getElementById('flow-palette-menu');
+          const hideFlowPaletteBtn = document.getElementById('hide-flow-palette');
+          const showFlowPaletteBtn = document.getElementById('show-flow-palette');
+          const showExperimentStatsBtns = document.querySelectorAll('#show-experiment-stats');
+          const infoBtn = document.getElementById('flow-palette-info');
+
+          // Ensure all experiment stats buttons open the shoulder panel
+          showExperimentStatsBtns.forEach(btn => {
+            btn.addEventListener('click', e => {
+              e.preventDefault();
+              showShoulderPanel(null, true);
+            });
+          });
+
+          // Show info modal or tooltip
+          infoBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const info = document.createElement('div');
+            info.innerHTML = `<div style="position:fixed; z-index:9999; left:50%; top:18%; transform:translate(-50%,0); background:rgba(10,20,40,0.98); color:#aefeff; border-radius:18px; box-shadow:0 8px 32px 0 rgba(0,255,255,0.18); padding:32px 36px; max-width:420px; font-size:1.08rem; text-align:left; border:1.5px solid #22d3ee;">
+              <div style='display:flex;align-items:center;gap:10px;'><i class='fas fa-info-circle'></i><b>How to use the canvas</b></div>
+              <ul style='margin:18px 0 0 0; padding-left:18px; color:#e0f7fa; font-size:1rem;'>
+                <li>Drag a step, decision, or end node onto the canvas.</li>
+                <li>Click one node, then another to draw a connection (arrow).</li>
+                <li>Double-click a node to open its details.</li>
+                <li>Right-click a node to rename it.</li>
+                <li>Drag nodes to reposition them.</li>
+                <li>Click the <i class='fas fa-chart-bar'></i> button for experiment stats.</li>
+                <li>Click the <i class='fas fa-times'></i> on a node to delete it.</li>
+                <li>Drag the Step Block Menu to reposition it.</li>
+              </ul>
+              <button style='margin-top:22px; display:block; width:100%; background:#22d3ee; color:#0a1428; border:none; border-radius:8px; padding:10px 0; font-weight:600; font-size:1rem; cursor:pointer;' id='close-flow-info'>Close</button>
+            </div>`;
+            info.id = 'flow-info-modal';
+            document.body.appendChild(info);
+            document.getElementById('close-flow-info').onclick = function() {
+              info.remove();
+            };
+          });
+
+          // Make flow steps menu draggable
+          // let dragOffsetX = 0, dragOffsetY = 0, draggingPalette = false;
+          // flowPaletteMenu.style.cursor = 'grab';
+          // flowPaletteMenu.addEventListener('mousedown', function(e) {
+          //   if (e.target.closest('button') && e.target !== hideFlowPaletteBtn) return; // Don't drag from inside buttons except X
+          //   draggingPalette = true;
+          //   flowPaletteMenu.style.cursor = 'grabbing';
+          //   dragOffsetX = e.clientX - flowPaletteMenu.getBoundingClientRect().left;
+          //   dragOffsetY = e.clientY - flowPaletteMenu.getBoundingClientRect().top;
+          //   document.body.style.userSelect = 'none';
+          // });
+          // document.addEventListener('mousemove', function(e) {
+          //   if (!draggingPalette) return;
+          //   let x = e.clientX - dragOffsetX;
+          //   let y = e.clientY - dragOffsetY;
+          //   // Clamp to viewport
+          //   x = Math.max(0, Math.min(x, window.innerWidth - flowPaletteMenu.offsetWidth));
+          //   y = Math.max(0, Math.min(y, window.innerHeight - flowPaletteMenu.offsetHeight - 60));
+          //   flowPaletteMenu.style.left = x + 'px';
+          //   flowPaletteMenu.style.top = y + 'px';
+          // });
+          // document.addEventListener('mouseup', function() {
+          //   if (draggingPalette) {
+          //     draggingPalette = false;
+          //     flowPaletteMenu.style.cursor = 'grab';
+          //     document.body.style.userSelect = '';
+          //   }
+          // });
+          // Show by default
+          flowPaletteMenu.style.opacity = '1';
+          flowPaletteMenu.style.visibility = 'visible';
+          showFlowPaletteBtn.style.display = 'none';
+
+          const paletteItems = document.querySelectorAll('#flow-palette-menu .node');
+          const flowContainer = document.querySelector('.flow-container');
+          const canvas = document.getElementById('flow-canvas');
+          let idCounter = 0;
+          let selectedNode = null;
+          let dragNode = null;
+          let offsetX = 0, offsetY = 0;
+          let lines = [];
+          let connectingFrom = null;
+          let nodeData = {};
+          let arrowOverlays = [];
+          let protocolVersionId = null; // Will be set after loading
+
+          // Make flow-container scrollable and canvas large
+          canvas.style.position = 'relative';
+          canvas.style.width = '2400px';
+          canvas.style.height = '1600px';
+          flowContainer.scrollLeft = 400;
+          flowContainer.scrollTop = 200;
+
+          // Drag from palette to canvas
+          paletteItems.forEach(item => {
+            item.addEventListener('dragstart', e => {
+              e.dataTransfer.setData('text/plain', item.dataset.type);
+              console.log('[DEBUG] dragstart', item.dataset.type);
+            });
+            item.addEventListener('dragend', e => {
+              console.log('[DEBUG] dragend', item.dataset.type);
+            });
+            item.setAttribute('draggable', 'true'); // Ensure draggable
+          });
+          canvas.addEventListener('dragover', e => {
+            e.preventDefault();
+            // Optional: add debug
+            // console.log('[DEBUG] dragover on canvas');
+          });
+          canvas.addEventListener('drop', async e => {
+            e.preventDefault();
+            console.log('[DEBUG] drop event fired');
+            const type = e.dataTransfer.getData('text/plain');
+            console.log('[DEBUG] drop type:', type);
+            const nodeName = type.charAt(0).toUpperCase() + type.slice(1);
+            const token = localStorage.getItem('access_token');
+            if (!token || !protocolVersionId) { console.log('[DEBUG] No token or protocolVersionId'); return; }
+            let stepId = null;
+            let stepObj = null;
+            try {
+              const res = await fetch(`/versions/${protocolVersionId}/steps`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ title: nodeName, order_index: 0 })
+              });
+              if (res.ok) {
+                stepObj = await res.json();
+                stepId = stepObj.id;
+              }
+            } catch (e) { console.error('[DEBUG] Error in step creation', e); }
+            if (!stepId) { console.log('[DEBUG] No stepId returned'); return; }
+            const node = document.createElement('div');
+            node.className = 'node holo-glow scanlines';
+            node.textContent = nodeName;
+            node.style.position = 'absolute';
+            node.style.left = (e.offsetX - 60) + 'px';
+            node.style.top = (e.offsetY - 24) + 'px';
+            node.id = stepId;
+            node.draggable = false;
+            // --- Color node based on due date/done ---
+            console.log('[DEBUG] StepObj:', stepObj);
+            if (stepObj) {
+              let color = '';
+              if (stepObj.done) {
+                color = 'rgba(0,255,100,0.25)'; // green
+              } else if (stepObj.due_date) {
+                const due = new Date(stepObj.due_date);
+                const now = new Date();
+                if (due < now) {
+                  color = 'rgba(255,0,0,0.18)'; // red
+                } else if (due - now <= 3*24*60*60*1000) {
+                  color = 'rgba(255,140,0,0.18)'; // orange
+                }
+              }
+              if (color) node.style.background = color;
+            }
+            // --- Add delete button ---
+            const delBtn = document.createElement('button');
+            delBtn.className = 'node-delete-btn';
+            delBtn.innerHTML = '<i class="fas fa-times"></i>';
+            delBtn.title = 'Delete node';
+            delBtn.style.display = 'none';
+            delBtn.style.position = 'absolute';
+            delBtn.style.top = '2px';
+            delBtn.style.right = '2px';
+            delBtn.style.zIndex = '10';
+            delBtn.style.background = 'rgba(0,0,0,0.5)';
+            delBtn.style.border = 'none';
+            delBtn.style.color = 'cyan';
+            delBtn.style.borderRadius = '50%';
+            delBtn.style.width = '22px';
+            delBtn.style.height = '22px';
+            delBtn.style.cursor = 'pointer';
+            delBtn.style.fontSize = '14px';
+            delBtn.addEventListener('click', function(ev) {
+              ev.stopPropagation();
+              // Remove all lines connected to this node
+              lines.filter(obj => obj.from === node || obj.to === node).forEach(obj => {
+                obj.line.remove();
+                if (obj.line.positionOverlay && typeof obj.line.positionOverlay === 'function') {
+                  // Remove overlay if present
+                  if (arrowOverlays) {
+                    arrowOverlays = arrowOverlays.filter(o => {
+                      if (o && o.parentNode && (obj.from === node || obj.to === node)) {
+                        o.remove();
+                        return false;
+                      }
+                      return true;
+                    });
+                  }
+                }
+              });
+              lines = lines.filter(obj => obj.from !== node && obj.to !== node);
+              // Remove node from nodeData
+              delete nodeData[node.id];
+              // Remove node from DOM
+              node.remove();
+              setTimeout(saveStepMap, 100);
+            });
+            node.appendChild(delBtn);
+            node.addEventListener('mouseenter', () => { delBtn.style.display = 'block'; });
+            node.addEventListener('mouseleave', () => { delBtn.style.display = 'none'; });
+            canvas.appendChild(node);
+            nodeData[node.id] = { type, name: nodeName };
+            makeNodeInteractive(node);
+          });
+
+          // Drag nodes within canvas
+          function makeNodeInteractive(node) {
+            node.style.position = 'absolute';
+            // --- Add delete button ---
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'node-delete-btn';
+            deleteBtn.innerHTML = '<i class="fas fa-times"></i>';
+            deleteBtn.title = 'Delete node';
+            deleteBtn.style.position = 'absolute';
+            deleteBtn.style.top = '2px';
+            deleteBtn.style.right = '2px';
+            deleteBtn.style.width = '22px';
+            deleteBtn.style.height = '22px';
+            deleteBtn.style.background = 'rgba(0,0,0,0.5)';
+            deleteBtn.style.border = 'none';
+            deleteBtn.style.borderRadius = '50%';
+            deleteBtn.style.color = 'cyan';
+            deleteBtn.style.display = 'none';
+            deleteBtn.style.zIndex = 10;
+            deleteBtn.style.cursor = 'pointer';
+            node.appendChild(deleteBtn);
+            node.addEventListener('mouseenter', () => { deleteBtn.style.display = 'block'; });
+            node.addEventListener('mouseleave', () => { deleteBtn.style.display = 'none'; });
+            deleteBtn.addEventListener('click', function(e) {
+              e.stopPropagation();
+              // Remove all lines connected to this node
+              lines.filter(obj => obj.from === node || obj.to === node).forEach(obj => {
+                obj.line.remove();
+                if (obj.line.positionOverlay && typeof obj.line.positionOverlay === 'function') {
+                  // Remove overlay if present
+                  arrowOverlays = arrowOverlays.filter(o => {
+                    if (o && o.parentNode && o.parentNode.contains(o)) {
+                      if (o.line === obj.line) { o.remove(); return false; }
+                    }
+                    return true;
+                  });
+                }
+              });
+              lines = lines.filter(obj => obj.from !== node && obj.to !== node);
+              // Remove node from DOM and nodeData
+              delete nodeData[node.id];
+              node.remove();
+              setTimeout(saveStepMap, 100);
+            });
+            node.addEventListener('mousedown', function(e) {
+              if (e.button !== 0) return;
+              dragNode = node;
+              offsetX = e.offsetX;
+              offsetY = e.offsetY;
+              document.addEventListener('mousemove', moveNode);
+              document.addEventListener('mouseup', stopMoveNode);
+            });
+            node.addEventListener('click', e => {
+              e.stopPropagation();
+              // Arrow drawing logic: select for renaming
+              if (e.ctrlKey || e.metaKey) {
+                // Control-click: focus for renaming
+                e.preventDefault();
+                node.focus();
+                return;
+              }
+              if (connectingFrom && connectingFrom !== node) {
+                // Draw connection
+                const line = new LeaderLine(connectingFrom, node, { color: 'cyan', size: 2 });
+                lines.push({ from: connectingFrom, to: node, line });
+                addArrowOverlay(connectingFrom, node, line);
+                connectingFrom.classList.remove('selected');
+                connectingFrom = null;
+              } else {
+                if (connectingFrom) connectingFrom.classList.remove('selected');
+                connectingFrom = node;
+                node.classList.add('selected');
+              }
+            });
+            node.addEventListener('contextmenu', async e => {
+              if (document.getElementById('view-only-banner') != null) return; // Disable rename in view-only mode
+              console.log("HELLLOOOOOO!");
+              e.preventDefault();
+              node.focus();
+              // Prompt for new name
+              const oldName = nodeData[node.id]?.name || node.textContent;
+              const newName = prompt('Rename step:', oldName);
+              if (newName && newName !== oldName) {
+                node.textContent = newName;
+                nodeData[node.id].name = newName;
+                // Re-add delete button after label change
+                if (!node.querySelector('.node-delete-btn')) {
+                  const delBtn = document.createElement('button');
+                  delBtn.className = 'node-delete-btn';
+                  delBtn.innerHTML = '<i class="fas fa-times"></i>';
+                  delBtn.title = 'Delete node';
+                  delBtn.style.display = 'none';
+                  delBtn.style.position = 'absolute';
+                  delBtn.style.top = '2px';
+                  delBtn.style.right = '2px';
+                  delBtn.style.zIndex = '10';
+                  delBtn.style.background = 'rgba(0,0,0,0.5)';
+                  delBtn.style.border = 'none';
+                  delBtn.style.color = 'cyan';
+                  delBtn.style.borderRadius = '50%';
+                  delBtn.style.width = '22px';
+                  delBtn.style.height = '22px';
+                  delBtn.style.cursor = 'pointer';
+                  delBtn.style.fontSize = '14px';
+                  delBtn.addEventListener('click', function(ev) {
+                    ev.stopPropagation();
+                    lines.filter(obj => obj.from === node || obj.to === node).forEach(obj => {
+                      obj.line.remove();
+                      if (obj.line.positionOverlay && typeof obj.line.positionOverlay === 'function') {
+                        if (arrowOverlays) {
+                          arrowOverlays = arrowOverlays.filter(o => {
+                            if (o && o.parentNode && (obj.from === node || obj.to === node)) {
+                              o.remove();
+                              return false;
+                            }
+                            return true;
+                          });
+                        }
+                      }
+                    });
+                    lines = lines.filter(obj => obj.from !== node && obj.to !== node);
+                    delete nodeData[node.id];
+                    node.remove();
+                    setTimeout(saveStepMap, 100);
+                  });
+                  node.appendChild(delBtn);
+                  node.addEventListener('mouseenter', () => { delBtn.style.display = 'block'; });
+                  node.addEventListener('mouseleave', () => { delBtn.style.display = 'none'; });
+                }
+                // PATCH backend step title
+                const token = localStorage.getItem('access_token');
+                if (token && node.id) {
+                  try {
+                    await fetch(`/steps/${encodeURIComponent(node.id)}`, {
+                      method: 'PATCH',
+                      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                      body: JSON.stringify({ title: newName })
+                    });
+                  } catch (err) { console.error('Failed to update step title', err); }
+                }
+                setTimeout(saveStepMap, 100);
+              }
+            });
+            node.addEventListener('dblclick', e => {
+              e.stopPropagation();
+              window.location.href = 'step.html?step_id=' + encodeURIComponent(node.id) + '&step_name=' + encodeURIComponent(nodeData[node.id]?.name || '');
+            });
+          }
+          function moveNode(e) {
+            if (!dragNode) return;
+            const rect = canvas.getBoundingClientRect();
+            let x = e.clientX - rect.left - offsetX;
+            let y = e.clientY - rect.top - offsetY;
+            // Clamp to canvas
+            x = Math.max(0, Math.min(x, canvas.offsetWidth - dragNode.offsetWidth));
+            y = Math.max(0, Math.min(y, canvas.offsetHeight - dragNode.offsetHeight));
+            dragNode.style.left = x + 'px';
+            dragNode.style.top = y + 'px';
+            // Update lines
+            updateLinesForNode(dragNode);
+          }
+          function stopMoveNode() {
+            dragNode = null;
+            document.removeEventListener('mousemove', moveNode);
+            document.removeEventListener('mouseup', stopMoveNode);
+          }
+          // Deselect on canvas click
+          canvas.addEventListener('click', () => {
+            if (connectingFrom) connectingFrom.classList.remove('selected');
+            connectingFrom = null;
+            // Only show experiment stats if user clicks empty canvas
+            showShoulderPanel(null, true);
+          });
+          // Update LeaderLines when node moves
+          function updateLinesForNode(node) {
+            lines.forEach(obj => {
+              if (obj.from === node || obj.to === node) {
+                obj.line.position();
+                if (obj.line.positionOverlay) obj.line.positionOverlay();
+              }
+            });
+          }
+          // Fullscreen
+          function toggleFullScreen() {
+            if (!document.fullscreenElement) canvas.requestFullscreen();
+            else document.exitFullscreen();
+          }
+          // Shoulder panel logic (show node info)
+          const shoulderPanel = document.getElementById('shoulder-panel');
+          const openShoulder = document.getElementById('open-shoulder');
+          const closeShoulder = document.getElementById('close-shoulder');
+          const showExperimentStatsBtn = document.getElementById('show-experiment-stats');
+          const gradeExperimentBtn = document.getElementById('grade-experiment-btn');
+          let currentNodeForPanel = null;
+          let showingExperimentStats = false;
+          function showShoulderPanel(node, isExperiment = false) {
+            showingExperimentStats = isExperiment;
+            currentNodeForPanel = isExperiment ? null : node;
+            if (isExperiment) {
+              // --- Experiment Stats: Fetch and show real stats ---
+              async function fetchAndShowExperimentStats() {
+                const projectId = getProjectIdFromQuery();
+                if (!projectId) return;
+                const token = localStorage.getItem('access_token');
+                if (!token) return;
+                try {
+                  const res = await fetch(`/projects/${encodeURIComponent(projectId)}`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                  });
+                  if (!res.ok) return;
+                  const project = await res.json();
+                  // Fetch lead scientist name using owner_id
+                  let leadName = 'N/A';
+                  if (project.owner_id) {
+                    try {
+                      const userRes = await fetch(`/users/${encodeURIComponent(project.owner_id)}`, {
+                        headers: { 'Authorization': 'Bearer ' + token }
+                      });
+                      if (userRes.ok) {
+                        const user = await userRes.json();
+                        leadName = user.name || user.full_name || user.username || project.owner_id;
+                      } else {
+                        leadName = project.owner_id;
+                      }
+                    } catch (e) {
+                      leadName = project.owner_id;
+                    }
+                  }
+                  document.getElementById('shoulder-lead').textContent = leadName;
+                  document.getElementById('shoulder-repro').textContent = project.reproducibility_score ?? 'N/A';
+                  document.getElementById('shoulder-impact').textContent = project.impact_score ?? 'N/A';
+                  document.getElementById('shoulder-diff').textContent = project.difficulty_score ?? 'N/A';
+                  document.getElementById('shoulder-budget').textContent = project.budget_requested ? ('$' + Number(project.budget_requested).toLocaleString()) : 'N/A';
+                  // Eligible grants: not available, so show N/A
+                  document.getElementById('shoulder-grants').textContent = 'N/A';
+                } catch (e) {}
+              }
+              fetchAndShowExperimentStats();
+            } else {
+              // Demo: show node name/type in stats
+              document.getElementById('shoulder-lead').textContent = nodeData[node.id]?.name || 'N/A';
+              document.getElementById('shoulder-repro').textContent = (Math.random()*2+3).toFixed(1);
+              document.getElementById('shoulder-impact').textContent = (Math.random()*2+3).toFixed(1);
+              document.getElementById('shoulder-diff').textContent = (Math.random()*2+2).toFixed(1);
+              document.getElementById('shoulder-budget').textContent = '$' + (Math.floor(Math.random()*100000)+50000).toLocaleString();
+              document.getElementById('shoulder-grants').textContent = Math.floor(Math.random()*6)+1;
+            }
+            shoulderPanel.classList.add('visible');
+          }
+          function hideShoulderPanel() {
+            shoulderPanel.classList.remove('visible');
+            currentNodeForPanel = null;
+            showingExperimentStats = false;
+          }
+          openShoulder.addEventListener('click', () => {
+            if (showingExperimentStats || !currentNodeForPanel) showShoulderPanel(null, true);
+            else showShoulderPanel(currentNodeForPanel);
+          });
+          closeShoulder.addEventListener('click', hideShoulderPanel);
+          showExperimentStatsBtn.addEventListener('click', () => showShoulderPanel(null, true));
+          // Shoulder panel logic (show node info)
+          if (gradeExperimentBtn) {
+            gradeExperimentBtn.addEventListener('click', async function() {
+              const projectId = getProjectIdFromQuery();
+              const token = localStorage.getItem('access_token');
+              if (!projectId || !token) return;
+              gradeExperimentBtn.disabled = true;
+              gradeExperimentBtn.textContent = 'Grading...';
+              try {
+                const res = await fetch(`/projects/${encodeURIComponent(projectId)}/grade`, {
+                  method: 'POST',
+                  headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (res.ok) {
+                  const scores = await res.json();
+                  document.getElementById('shoulder-repro').textContent = (scores.reproducibility !== undefined && scores.reproducibility !== null) ? Number(scores.reproducibility).toFixed(2) : 'N/A';
+                  document.getElementById('shoulder-impact').textContent = (scores.impact !== undefined && scores.impact !== null) ? Number(scores.impact).toFixed(2) : 'N/A';
+                  document.getElementById('shoulder-diff').textContent = (scores.difficulty !== undefined && scores.difficulty !== null) ? Number(scores.difficulty).toFixed(2) : 'N/A';
+                  document.getElementById('shoulder-budget').textContent = (scores.estimated_budget !== undefined && scores.estimated_budget !== null) ? ('$' + Number(scores.estimated_budget).toLocaleString()) : 'N/A';
+                  gradeExperimentBtn.textContent = 'Grade Again';
+                } else {
+                  const err = await res.json();
+                  alert('Failed to grade experiment: ' + (err.error || res.status));
+                  gradeExperimentBtn.textContent = 'Grade Experiment';
+                }
+              } catch (e) {
+                alert('Error grading experiment: ' + e);
+                gradeExperimentBtn.textContent = 'Grade Experiment';
+              }
+              gradeExperimentBtn.disabled = false;
+            });
+          }
+          // Add event listeners for the hide and show buttons
+          hideFlowPaletteBtn.addEventListener('click', function() {
+            flowPaletteMenu.style.display = 'none'; // Hide the menu
+            showFlowPaletteBtn.style.display = 'block'; // Show the "+" button
+          });
+
+          showFlowPaletteBtn.addEventListener('click', function() {
+            flowPaletteMenu.style.display = 'flex'; // Show the menu
+            showFlowPaletteBtn.style.display = 'none'; // Hide the "+" button
+            if (document.getElementById('view-only-banner')) {
+              var stepBlock = document.querySelector('#flow-palette-menu .node[data-type="step"]');
+              if (stepBlock) stepBlock.style.display = 'none';
+            }
+          });
+          // On window resize, update all lines
+          window.addEventListener('resize', () => {
+            lines.forEach(obj => obj.line.position());
+          });
+          // Make palette nodes visually draggable
+          document.querySelectorAll('.drag-palette .node').forEach(n => {
+            n.addEventListener('dragstart', e => {
+              e.target.classList.add('dragging');
+            });
+            n.addEventListener('dragend', e => {
+              e.target.classList.remove('dragging');
+            });
+          });
+          function addArrowOverlay(fromNode, toNode, leaderLine) {
+            // Always create the overlay, but hide it if viewOnly is true
+            const overlay = document.createElement('div');
+            overlay.className = 'arrow-overlay';
+            overlay.style.position = 'absolute';
+            overlay.style.zIndex = 4000;
+            overlay.style.pointerEvents = 'auto';
+            overlay.style.width = '32px';
+            overlay.style.height = '32px';
+            overlay.style.background = 'rgba(0,255,255,0.08)';
+            overlay.style.borderRadius = '50%';
+            overlay.style.display = window.viewOnly ? 'none' : 'flex';
+            overlay.style.alignItems = 'center';
+            overlay.style.justifyContent = 'center';
+            overlay.style.cursor = 'pointer';
+            overlay.style.transition = 'background 0.2s';
+            overlay.title = 'Delete arrow';
+            overlay.innerHTML = '<i class="fas fa-times" style="color:cyan;font-size:18px;"></i>';
+            canvas.appendChild(overlay);
+            function positionOverlay() {
+              const start = fromNode.getBoundingClientRect();
+              const end = toNode.getBoundingClientRect();
+              const canvasRect = canvas.getBoundingClientRect();
+              const x = ((start.left + start.width/2) + (end.left + end.width/2)) / 2 - canvasRect.left;
+              const y = ((start.top + start.height/2) + (end.top + end.height/2)) / 2 - canvasRect.top;
+              overlay.style.left = (x - 16) + 'px';
+              overlay.style.top = (y - 16) + 'px';
+            }
+            positionOverlay();
+            leaderLine.positionOverlay = positionOverlay;
+            window.addEventListener('resize', positionOverlay);
+            const reposition = () => setTimeout(positionOverlay, 0);
+            fromNode.addEventListener('mouseup', reposition);
+            toNode.addEventListener('mouseup', reposition);
+            overlay.addEventListener('click', function(e) {
+              if (document.getElementById('view-only-banner') != null) return; // Prevent deletion in view-only mode
+              e.stopPropagation();
+              leaderLine.remove();
+              lines = lines.filter(obj => obj.line !== leaderLine);
+              overlay.remove();
+              arrowOverlays = arrowOverlays.filter(o => o !== overlay);
+            });
+            arrowOverlays.push(overlay);
+          }
+          // Remove overlays when switching views or on cleanup
+          function removeAllArrowOverlays() {
+            arrowOverlays.forEach(o => o.remove());
+            arrowOverlays = [];
+          }
+          // Optionally, call removeAllArrowOverlays() when switching away from flowchart view
+          // Add CSS for overlay
+          const style = document.createElement('style');
+          style.innerHTML = `.arrow-overlay:hover { background:rgba(0,255,255,0.18)!important; box-shadow:0 0 8px 0 rgba(0,255,255,0.18); }`;
+          document.head.appendChild(style);
+          flowContainer.addEventListener('scroll', () => {
+            lines.forEach(obj => {
+              obj.line.position();
+              if (obj.line.positionOverlay) obj.line.positionOverlay();
+            });
+          });
+          // --- Step Map Persistence ---
+          async function loadStepMap() {
+            const projectId = getProjectIdFromQuery();
+            if (!projectId) { console.log('No projectId'); return; }
+            const token = localStorage.getItem('access_token');
+            if (!token) { console.log('No token'); return; }
+            let protocolVersion = null;
+            let versions = [];
+            try {
+              // Always treat incoming ID as project ID, resolve experiment
+              const projRes = await fetch(`/projects/${encodeURIComponent(projectId)}`, {
+                headers: { 'Authorization': 'Bearer ' + token }
+              });
+              if (!projRes.ok) { console.log('Project not found'); return; }
+              const proj = await projRes.json();
+              const allExpRes = await fetch(`/experiments`, {
+                headers: { 'Authorization': 'Bearer ' + token }
+              });
+              if (!allExpRes.ok) { console.log('Experiments not found'); return; }
+              const experiments = await allExpRes.json();
+              const exp = experiments.find(e => e.title === proj.title && e.owner_id === proj.owner_id);
+              if (!exp) { console.log('Experiment not found for this project.'); return; }
+              console.log("Experiment ID:", exp.id);
+              const expRes = await fetch(`/experiments/${encodeURIComponent(exp.id)}/versions`, {
+                headers: { 'Authorization': 'Bearer ' + token }
+              });
+              if (!expRes.ok) { console.log('Experiment versions not found'); return; }
+              versions = await expRes.json();
+              if (!Array.isArray(versions) || versions.length === 0) {
+                console.log('No protocol versions found for this experiment.');
+                return;
+              }
+              protocolVersion = versions.reduce((a, b) => {
+                if (!a.created_at) return b;
+                if (!b.created_at) return a;
+                return new Date(a.created_at) > new Date(b.created_at) ? a : b;
+              });
+              protocolVersionId = protocolVersion.id;
+              console.log('Protocol version ID:', protocolVersionId);
+              // Fetch step_map
+              const mapUrl = `/protocol-versions/${protocolVersionId}/step-map`;
+              console.log('Fetching step map from', mapUrl);
+              const mapRes = await fetch(mapUrl, {
+                headers: { 'Authorization': 'Bearer ' + token }
+              });
+              if (!mapRes.ok) { console.log('Failed to fetch step map'); return; }
+              const { step_map } = await mapRes.json();
+              console.log('Loaded step map:', step_map);
+              if (step_map && Object.keys(step_map).length > 0) {
+                restoreStepMap(step_map);
+              }
+            } catch (e) { console.error('Error loading step map', e); }
+          }
+
+          async function saveStepMap() {
+            if (!protocolVersionId) return;
+            const token = localStorage.getItem('access_token');
+            if (!token) return;
+            const stepMap = getCurrentStepMap();
+            try {
+              await fetch(`/protocol-versions/${protocolVersionId}/step-map`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ step_map: stepMap })
+              });
+            } catch (e) {}
+          }
+
+          function getCurrentStepMap() {
+            // Serialize all nodes and connections
+            const nodes = Array.from(canvas.querySelectorAll('.node')).map(node => ({
+              id: node.id,
+              type: nodeData[node.id]?.type,
+              name: nodeData[node.id]?.name,
+              x: parseInt(node.style.left, 10),
+              y: parseInt(node.style.top, 10)
+            }));
+            const connections = lines.map(obj => ({ from: obj.from.id, to: obj.to.id }));
+            return { nodes, connections };
+          }
+
+          function restoreStepMap(stepMap) {
+            // Remove all current nodes and lines
+            canvas.innerHTML = '<button class="fullscreen-btn glass p-2 rounded holo-glow" onclick="toggleFullScreen()"><i class="fas fa-expand" aria-hidden="true"></i></button>';
+            nodeData = {}; lines = []; arrowOverlays = []; idCounter = 0;
+            // --- 1. Create all nodes synchronously ---
+            const nodeMap = {};
+            (stepMap.nodes || []).forEach(n => {
+              const node = document.createElement('div');
+              node.className = 'node holo-glow scanlines';
+              node.textContent = n.name || n.type;
+              node.style.position = 'absolute';
+              node.style.left = (n.x || 0) + 'px';
+              node.style.top = (n.y || 0) + 'px';
+              node.id = n.id;
+              node.draggable = false;
+              // --- Fetch real step status and color node (async, but don't block node creation) ---
+              (async () => {
+                let color = '';
+                try {
+                  const token = localStorage.getItem('access_token');
+                  if (token && n.id) {
+                    const res = await fetch(`/steps/${encodeURIComponent(n.id)}`, {
+                      headers: { 'Authorization': 'Bearer ' + token }
+                    });
+                    if (res.ok) {
+                      const stepObj = await res.json();
+                      if (stepObj.done) {
+                        color = 'rgba(0,255,100,0.25)'; // green
+                      } else if (stepObj.due_date) {
+                        const due = new Date(stepObj.due_date);
+                        const now = new Date();
+                        if (due < now) {
+                          color = 'rgba(255,0,0,0.18)'; // red
+                        } else if (due - now <= 3*24*60*60*1000) {
+                          color = 'rgba(255,140,0,0.18)'; // orange
+                        }
+                      }
+                    }
+                  }
+                } catch (e) { console.error('[DEBUG] Error fetching step for node', n.id, e); }
+                if (color) node.style.background = color;
+              })();
+              // --- Add delete button ---
+              const delBtn = document.createElement('button');
+              delBtn.className = 'node-delete-btn';
+              delBtn.innerHTML = '<i class="fas fa-times"></i>';
+              delBtn.title = 'Delete node';
+              delBtn.style.display = 'none';
+              delBtn.style.position = 'absolute';
+              delBtn.style.top = '2px';
+              delBtn.style.right = '2px';
+              delBtn.style.zIndex = '10';
+              delBtn.style.background = 'rgba(0,0,0,0.5)';
+              delBtn.style.border = 'none';
+              delBtn.style.color = 'cyan';
+              delBtn.style.borderRadius = '50%';
+              delBtn.style.width = '22px';
+              delBtn.style.height = '22px';
+              delBtn.style.cursor = 'pointer';
+              delBtn.style.fontSize = '14px';
+              delBtn.addEventListener('click', function(ev) {
+                ev.stopPropagation();
+                lines.filter(obj => obj.from === node || obj.to === node).forEach(obj => {
+                  obj.line.remove();
+                  if (obj.line.positionOverlay && typeof obj.line.positionOverlay === 'function') {
+                    if (arrowOverlays) {
+                      arrowOverlays = arrowOverlays.filter(o => {
+                        if (o && o.parentNode && (obj.from === node || obj.to === node)) {
+                          o.remove();
+                          return false;
+                        }
+                        return true;
+                      });
+                    }
+                  }
+                });
+                lines = lines.filter(obj => obj.from !== node && obj.to !== node);
+                delete nodeData[node.id];
+                node.remove();
+                setTimeout(saveStepMap, 100);
+              });
+              node.appendChild(delBtn);
+              node.addEventListener('mouseenter', () => { delBtn.style.display = 'block'; });
+              node.addEventListener('mouseleave', () => { delBtn.style.display = 'none'; });
+              canvas.appendChild(node);
+              nodeData[node.id] = { type: n.type, name: n.name };
+              makeNodeInteractive(node);
+              idCounter = Math.max(idCounter, parseInt(node.id.replace('node-', ''), 10) || 0);
+              nodeMap[n.id] = node;
+            });
+            // --- 2. Add connections after all nodes exist ---
+            (stepMap.connections || []).forEach(conn => {
+              const fromNode = nodeMap[conn.from] || document.getElementById(conn.from);
+              const toNode = nodeMap[conn.to] || document.getElementById(conn.to);
+              if (fromNode && toNode) {
+                const line = new LeaderLine(fromNode, toNode, { color: 'cyan', size: 2 });
+                lines.push({ from: fromNode, to: toNode, line });
+                addArrowOverlay(fromNode, toNode, line);
+              }
+            });
+          }
+
+          // --- Hook up saveStepMap to all relevant changes ---
+          function hookStepMapPersistence() {
+            // Save on node add
+            canvas.addEventListener('drop', saveStepMap);
+            // Save on node move
+            canvas.addEventListener('mouseup', saveStepMap);
+            // Save on connection add
+            // (after drawing a line)
+            const origMakeNodeInteractive = makeNodeInteractive;
+            makeNodeInteractive = function(node) {
+              origMakeNodeInteractive(node);
+              node.addEventListener('click', function(e) {
+                setTimeout(saveStepMap, 100); // Save after possible connection
+              });
+              node.addEventListener('contextmenu', function(e) {
+                setTimeout(saveStepMap, 100);
+              });
+              node.addEventListener('dblclick', function(e) {
+                setTimeout(saveStepMap, 100);
+              });
+            };
+            // Save on arrow delete
+            const origAddArrowOverlay = addArrowOverlay;
+            addArrowOverlay = function(fromNode, toNode, leaderLine) {
+              origAddArrowOverlay(fromNode, toNode, leaderLine);
+              // Find the overlay just added
+              const overlay = arrowOverlays[arrowOverlays.length - 1];
+              if (overlay) {
+                overlay.addEventListener('click', function() {
+                  setTimeout(saveStepMap, 100);
+                });
+              }
+            };
+          }
+
+          document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOMContentLoaded');
+            loadStepMap();
+            hookStepMapPersistence();
+            // Hide step block if view-only
+            if (document.getElementById('view-only-banner')) {
+              var stepBlock = document.querySelector('#flow-palette-menu .node[data-type="step"]');
+              if (stepBlock) stepBlock.style.display = 'none';
+            }
+          });
+        </script>
+      </section>
+      <!-- Project Chat View -->
+      <section id="view-chat" class="view-section hidden">
+        <section id="chat-interface" class="py-20 px-8 mx-auto relative z-10">
+          <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg" style="z-index:-1; height: 950px;">
+            <defs>
+              <pattern id="grid-chat" width="80" height="80" patternUnits="userSpaceOnUse">
+                <path d="M80 0 L0 0 0 80" class="stroke-line" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid-chat)" />
+          </svg>
+          <h2 class="text-3xl font-bold text-cyan-200 mb-6">Project Chat</h2>
+          <div class="glass rounded-2xl p-6 holo-glow scanlines flex flex-col" style="height: 420px;">
+            <div id="chat-messages" class="flex-1 overflow-y-auto mb-4 space-y-3 pr-2" style="max-height: 300px;">
+              <!-- Messages will appear here -->
+            </div>
+            <form id="chat-form" class="flex gap-2">
+              <input id="chat-input" type="text" autocomplete="off" placeholder="Type a message..." class="flex-1 p-2 rounded glass border border-cyan-400/20 text-cyan-100 bg-transparent focus:outline-none" />
+              <button type="submit" class="px-4 py-2 rounded glass holo-glow border border-cyan-400/30 hover:border-cyan-300 transition text-cyan-200">Send</button>
+            </form>
+          </div>
+        </section>
+
+        <script>
+          // Persistent project chat logic
+          const chatMessages = document.getElementById('chat-messages');
+          const chatForm = document.getElementById('chat-form');
+          const chatInput = document.getElementById('chat-input');
+          let chatHistory = [];
+          function getProjectIdFromQuery() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('project_id');
+          }
+          async function fetchChatMessages() {
+            const projectId = getProjectIdFromQuery();
+            const token = localStorage.getItem('access_token');
+            if (!projectId || !token) return;
+            try {
+              const res = await fetch(`/experiments/${encodeURIComponent(projectId)}/chat`, {
+                headers: { 'Authorization': 'Bearer ' + token }
+              });
+              if (!res.ok) return;
+              chatHistory = await res.json();
+              renderMessages();
+            } catch (e) {}
+          }
+          function renderMessages() {
+            chatMessages.innerHTML = '';
+            chatHistory.forEach(msg => {
+              const div = document.createElement('div');
+              div.className = 'flex items-start gap-3';
+              const userInitial = (msg.sender_name || msg.user || '?')[0] || '?';
+              const userName = msg.sender_name || msg.user || 'Unknown';
+              const time = msg.sent_at ? new Date(msg.sent_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : (msg.time || '');
+              div.innerHTML = `
+                <div class="flex-shrink-0 w-8 h-8 rounded-full bg-cyan-900 flex items-center justify-center text-cyan-200 font-bold text-lg">${userInitial}</div>
+                <div>
+                  <div class="text-cyan-100 font-semibold text-sm">${userName} <span class="text-xs text-cyan-400 ml-2">${time}</span></div>
+                  <div class="text-cyan-200">${msg.content || msg.text}</div>
+                </div>
+              `;
+              chatMessages.appendChild(div);
+            });
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+          }
+          chatForm.addEventListener('submit', async e => {
+            e.preventDefault();
+            const text = chatInput.value.trim();
+            if (!text) return;
+            const projectId = getProjectIdFromQuery();
+            const token = localStorage.getItem('access_token');
+            if (!projectId || !token) return;
+            try {
+              const res = await fetch(`/experiments/${encodeURIComponent(projectId)}/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ content: text })
+              });
+              if (res.ok) {
+                chatInput.value = '';
+                await fetchChatMessages();
+              }
+            } catch (e) {}
+          });
+          // Initial fetch and poll every 10s
+          fetchChatMessages();
+          setInterval(fetchChatMessages, 10000);
+        </script>
+      </section>
+      <!-- Lab Notebook View -->
+      <section id="view-notebook" class="view-section hidden">
+        <section id="lab-notebook" class="py-20 px-8 mx-auto relative z-10 max-w-7xl">
+          <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg" style="z-index:-1;">
+            <defs>
+              <pattern id="grid-notebook" width="80" height="80" patternUnits="userSpaceOnUse">
+                <path d="M80 0 L0 0 0 80" class="stroke-line" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid-notebook)" />
+          </svg>
+          <h2 class="text-3xl font-bold text-cyan-200 mb-6 flex items-center gap-4">
+            <i class="fas fa-book-medical"></i> Lab Notebook
+            <button id="notebook-summary-btn" class="ml-auto px-4 py-2 glass holo-glow rounded border border-cyan-400/30 hover:border-cyan-300 transition text-cyan-200 text-sm">AI Summary</button>
+            <select id="notebook-style-toggle" class="ml-4 glass rounded text-cyan-200 bg-black/40 border border-cyan-400/20 text-sm">
+              <option value="verbose">Verbose</option>
+              <option value="concise">Concise</option>
+              <option value="publish">Publish-Ready</option>
+              <option value="slack">Slack Bullets</option>
+            </select>
+          </h2>
+          <div class="flex flex-col md:flex-row gap-8">
+            <!-- Timeline Sidebar -->
+            <div class="w-full md:w-1/4">
+              <div class="glass rounded-xl holo-glow scanlines p-4 mb-4">
+                <label class="block text-cyan-200 mb-2">Group By</label>
+                <select id="notebook-group-toggle" class="w-full glass rounded text-cyan-200 bg-black/40 border border-cyan-400/20 text-sm mb-2">
+                  <option value="session">Session</option>
+                  <option value="day">Day</option>
+                  <option value="experiment">Experiment</option>
+                </select>
+                <input id="notebook-search" type="text" placeholder="Semantic search..." class="w-full p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent text-sm" />
+                <div id="notebook-timeline" class="mt-4 max-h-[600px] overflow-y-auto"></div>
+              </div>
+              <button id="new-entry-btn" class="w-full px-4 py-2 glass holo-glow rounded border border-cyan-400/30 hover:border-cyan-300 transition text-cyan-200 text-sm">+ New Entry</button>
+            </div>
+            <!-- Entry Editor/Main Panel -->
+            <div class="flex-1 flex flex-col gap-4">
+              <div id="notebook-entry-meta" class="flex flex-wrap gap-4 items-center text-cyan-300 text-xs mb-2"></div>
+              <div class="flex gap-2 mb-2">
+                <button id="mode-freeform" class="px-3 py-1 rounded glass border border-cyan-400/20 text-cyan-200 text-xs">Freeform</button>
+                <button id="mode-structured" class="px-3 py-1 rounded glass border border-cyan-400/20 text-cyan-200 text-xs">Structured</button>
+                <span id="notebook-diff-indicator" class="ml-4 text-green-400 text-xs hidden">Saved</span>
+              </div>
+              <div id="notebook-structured-fields" class="hidden mb-2">
+                <input type="text" id="notebook-obs" class="w-full p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent mb-2" placeholder="Observation" />
+                <input type="text" id="notebook-hyp" class="w-full p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent mb-2" placeholder="Hypothesis" />
+                <input type="text" id="notebook-method" class="w-full p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent mb-2" placeholder="Method" />
+                <input type="text" id="notebook-result" class="w-full p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent mb-2" placeholder="Result" />
+                <input type="text" id="notebook-conc" class="w-full p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent mb-2" placeholder="Conclusion" />
+              </div>
+              <textarea id="notebook-editor" class="h-[400px] w-full glass rounded-xl holo-glow scanlines mb-2" style="min-height:400px; font-size:1.1rem;"></textarea>
+              <div class="flex flex-wrap gap-2 items-center mb-2">
+                <input type="file" id="notebook-attach" multiple class="hidden" accept="image/*,audio/*,video/*,.csv,.fasta,.tiff,.hdf5,.log,.txt" />
+                <button id="attach-btn" class="px-3 py-1 rounded glass border border-cyan-400/20 text-cyan-200 text-xs"><i class="fas fa-paperclip"></i> Attach</button>
+                <button id="voice-btn" class="px-3 py-1 rounded glass border border-cyan-400/20 text-cyan-200 text-xs"><i class="fas fa-microphone"></i> Voice</button>
+                <button id="ocr-btn" class="px-3 py-1 rounded glass border border-cyan-400/20 text-cyan-200 text-xs"><i class="fas fa-camera"></i> OCR</button>
+                <button id="save-entry-btn" class="ml-auto px-4 py-2 glass holo-glow rounded border border-cyan-400/30 hover:border-cyan-300 transition text-cyan-200 text-sm">Save Entry</button>
+              </div>
+              <div id="notebook-attachments" class="flex flex-wrap gap-4 mb-2"></div>
+              <div id="notebook-preview" class="glass rounded-xl holo-glow scanlines p-4 bg-white text-black"></div>
+              <div id="notebook-diff-view" class="glass rounded-xl holo-glow scanlines p-4 text-xs text-cyan-200 hidden"></div>
+            </div>
+          </div>
+        </section>
+        <script src="notebook-ui.js"></script>
+      </section>
+      <!-- Grant Application View -->
+      <section id="view-grants" class="view-section hidden">
+        <section id="suggested-grants" class="py-20 px-8 mx-auto relative z-10 max-w-4xl">
+            <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg" style="z-index:-1;">
+              <defs>
+                <pattern id="grid-grants" width="80" height="80" patternUnits="userSpaceOnUse">
+                  <path d="M80 0 L0 0 0 80" class="stroke-line" />
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#grid-grants)" />
+            </svg>
+            <h2 class="text-3xl font-bold text-cyan-200 mb-6">Suggested Grants For You</h2>
+            <p class="text-cyan-100/80" style="margin-bottom: 30px;">Click 'apply now' to see the grant application.<br></p>
+            <div id="suggested-grants-list" class="grid grid-cols-1 md:grid-cols-2 gap-8"></div>
+          </section>
+
+          <div class="h-32"></div>
+
+          <!-- Grant Application Page Component (single grant, project selection, metrics, and budget) -->
+          <section id="grant-application" class="py-20 px-8 mx-auto relative z-10 max-w-2xl hidden">
+            <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg" style="z-index:-1;">
+              <defs>
+                <pattern id="grid-apply" width="80" height="80" patternUnits="userSpaceOnUse">
+                  <path d="M80 0 L0 0 0 80" class="stroke-line" />
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#grid-apply)" />
+            </svg>
+            <h2 class="text-3xl font-bold text-cyan-200 mb-6" id="grant-app-title">Grant Application</h2>
+            <div class="glass rounded-2xl p-8 holo-glow scanlines flex flex-col gap-6">
+              <div class="mb-4">
+                <div class="text-cyan-200 text-lg font-semibold">Grant: <span id="grant-app-grant-name"></span></div>
+                <div class="text-cyan-200">Funding Available: <span id="grant-app-funding" class="text-cyan-300"></span></div>
+              </div>
+              <form id="grant-application-form" class="flex flex-col gap-6">
+                <div>
+                  <label class="block text-cyan-200 mb-2">Select Your Project</label>
+                  <select id="grant-app-project" name="project" class="w-full p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent" required>
+                    <!-- Populated by JS -->
+                  </select>
+                </div>
+                <div id="grant-app-project-details" class="mb-4 hidden">
+                  <div class="mb-2 text-cyan-100/80">Estimated Budget Needed: <span id="grant-app-project-budget" class="text-cyan-300"></span></div>
+                  <div class="flex gap-6">
+                    <div>Reproducibility: <span id="grant-app-project-repro" class="text-cyan-200"></span></div>
+                    <div>Impact: <span id="grant-app-project-impact" class="text-cyan-200"></span></div>
+                    <div>Difficulty: <span id="grant-app-project-diff" class="text-cyan-200"></span></div>
+                  </div>
+                </div>
+                <div id="grant-app-questions"></div>
+                <div class="text-right">
+                  <button type="submit" class="px-6 py-3 glass holo-glow rounded-lg border border-cyan-400/30 hover:border-cyan-300 transition">Submit Application</button>
+                </div>
+                <div id="grant-application-success" class="hidden text-green-400 mt-4">Application submitted! Thank you.</div>
+              </form>
+            </div>
+          </section>
+          <script>
+            // --- Fetch and populate real user projects ---
+async function populateUserProjectsSelect() {
+  const select = document.getElementById('grant-app-project');
+  select.innerHTML = '';
+  const token = localStorage.getItem('access_token');
+  if (!token) return;
+  try {
+    const res = await fetch('/projects', { headers: { 'Authorization': 'Bearer ' + token } });
+    if (!res.ok) return;
+    const projects = await res.json();
+    projects.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id; // Use real UUID
+      opt.textContent = p.title;
+      opt.dataset.budget = p.budget_requested;
+      opt.dataset.repro = p.reproducibility_score;
+      opt.dataset.impact = p.impact_score;
+      opt.dataset.diff = p.difficulty_score;
+      select.appendChild(opt);
+                });
+  } catch (e) {}
+}
+
+// Open grant application for a specific grant
+function openGrantApplication(grantName, funding, grantId) {
+  document.getElementById('grant-app-title').textContent = `Apply for: ${grantName}`;
+  const grantNameSpan = document.getElementById('grant-app-grant-name');
+  grantNameSpan.textContent = grantName;
+  grantNameSpan.dataset.grantId = grantId; // Store grantId as data attribute
+  document.getElementById('grant-app-funding').textContent = `$${funding.toLocaleString()}`;
+  // Populate project select with real projects
+  populateUserProjectsSelect().then(() => {
+    // Hide details until project is selected
+    document.getElementById('grant-app-project-details').classList.add('hidden');
+    document.getElementById('grant-application').classList.remove('hidden');
+    window.scrollTo({ top: document.getElementById('grant-application').offsetTop - 80, behavior: 'smooth' });
+  });
+  // If grantId is provided, call showGrantApplication to render questions
+  if (grantId) {
+    showGrantApplication(grantId);
+  }
+}
+
+// Show project details on selection
+// (update to use data attributes from real project options)
+document.addEventListener('DOMContentLoaded', function() {
+  const select = document.getElementById('grant-app-project');
+  if (select) {
+    select.addEventListener('change', function() {
+      const opt = select.selectedOptions[0];
+      function formatScore(val) {
+        if (val === undefined || val === null || val === '' || val === 'null' || isNaN(Number(val))) return 'N/A';
+        return Number(val).toFixed(2);
+      }
+      if (opt) {
+        document.getElementById('grant-app-project-budget').textContent = (opt.dataset.budget && opt.dataset.budget !== 'null' && opt.dataset.budget !== '') ? `$${Number(opt.dataset.budget).toLocaleString()}` : 'N/A';
+        document.getElementById('grant-app-project-repro').textContent = formatScore(opt.dataset.repro);
+        document.getElementById('grant-app-project-impact').textContent = formatScore(opt.dataset.impact);
+        document.getElementById('grant-app-project-diff').textContent = formatScore(opt.dataset.diff);
+        document.getElementById('grant-app-project-details').classList.remove('hidden');
+      } else {
+        document.getElementById('grant-app-project-details').classList.add('hidden');
+      }
+    });
+  }
+});
+
+            // Grant Application Form Handler
+            const grantForm = document.getElementById('grant-application-form');
+            if (grantForm) {
+              grantForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const submitBtn = grantForm.querySelector('button[type="submit"]');
+                if (submitBtn) submitBtn.disabled = true;
+                const token = localStorage.getItem('access_token');
+                if (!token) return;
+                // Get selected project
+                const projectId = document.getElementById('grant-app-project').value;
+                // Get grant name and funding
+                const grantName = document.getElementById('grant-app-grant-name').textContent;
+                const funding = document.getElementById('grant-app-funding').textContent.replace(/[^\d.]/g, '');
+                // Get grant ID (assume it's stored as a data attribute on the grant name span or elsewhere)
+                const grantId = document.getElementById('grant-app-grant-name').dataset.grantId;
+                // Collect all grant question answers in order
+                const answers = [];
+                const questions = document.querySelectorAll('#grant-app-questions textarea');
+                questions.forEach(q => answers.push(q.value));
+                // POST to backend using correct endpoint
+                if (!grantId) {
+                  alert('Grant ID not found.');
+                  if (submitBtn) submitBtn.disabled = false;
+                  return;
+                }
+                const res = await fetch(`/grants/${encodeURIComponent(grantId)}/apply`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                  },
+                  body: JSON.stringify({
+                    grant: grantName,
+                    funding: funding,
+                    project_id: projectId,
+                    answers: answers
+                  })
+                });
+                if (res.ok) {
+                  document.getElementById('grant-application-success').classList.remove('hidden');
+                  grantForm.reset();
+                  document.getElementById('grant-app-project-details').classList.add('hidden');
+                } else {
+                  alert('Error submitting application.');
+                }
+                if (submitBtn) submitBtn.disabled = false;
+              });
+            }
+
+            // --- Fetch and populate real user projects ---
+async function showGrantApplication(grantId) {
+  console.log('Showing grant application for ID:', grantId);
+  // Fetch grant details
+  let grant = null;
+  try {
+    const token = localStorage.getItem('access_token');
+    const res = await fetch(`/grants/${encodeURIComponent(grantId)}`, { headers: { 'Authorization': 'Bearer ' + token } });
+    if (res.ok) grant = await res.json();
+  } catch (e) {}
+  // Grant not found or fetch error
+  if (!grant) {
+    document.getElementById('grant-app-title').textContent = 'Grant Application';
+    document.getElementById('grant-app-grant-name').textContent = '';
+    document.getElementById('grant-app-funding').textContent = '';
+    document.getElementById('grant-app-project-details').classList.add('hidden');
+    document.getElementById('grant-application').classList.remove('hidden');
+    return;
+  }
+  // Set grant details
+  document.getElementById('grant-app-title').textContent = `Apply for: ${grant.title}`;
+  document.getElementById('grant-app-grant-name').textContent = grant.title;
+  document.getElementById('grant-app-funding').textContent = `$${grant.total_funding_usd.toLocaleString()}`;
+  // Populate project select with real projects
+  populateUserProjectsSelect().then(() => {
+    // Hide details until project is selected
+    document.getElementById('grant-app-project-details').classList.add('hidden');
+    document.getElementById('grant-application').classList.remove('hidden');
+    window.scrollTo({ top: document.getElementById('grant-application').offsetTop - 80, behavior: 'smooth' });
+  });
+  // Render grant questions dynamically
+  const questionsDiv = document.getElementById('grant-app-questions');
+  console.log('Grant questions:', grant.application_questions);
+  questionsDiv.innerHTML = '';
+  if (grant && Array.isArray(grant.application_questions) && grant.application_questions.length) {
+    grant.application_questions.forEach((q, idx) => {
+      const qDiv = document.createElement('div');
+      qDiv.className = 'mb-4';
+      qDiv.innerHTML = `<label class="block text-cyan-200 mb-2">${q}</label><textarea name="question_${idx}" class="w-full p-2 glass border border-cyan-400/20 rounded text-cyan-100 bg-transparent" rows="3" required></textarea>`;
+      questionsDiv.appendChild(qDiv);
+    });
+  }
+}
+          </script>
+      </section>
+      <!-- Experiment History Modal -->
+      <div id="experiment-history-modal" class="fixed inset-0 flex items-center justify-center bg-black/60 z-50 hidden">
+        <div class="bg-[#101020] glass rounded-2xl p-8 max-w-2xl w-full relative">
+          <button id="closeExperimentHistoryModal" class="absolute top-4 right-4 text-cyan-300 text-2xl">&times;</button>
+          <h2 class="text-2xl font-bold text-cyan-200 mb-6 text-center">Experiment Edit History</h2>
+          <div id="experiment-history-list" class="flex flex-col gap-4 max-h-[60vh] overflow-y-auto"></div>
+        </div>
+      </div>
+      <script>
+        // Show experiment history modal
+        async function showExperimentHistoryModal() {
+          const modal = document.getElementById('experiment-history-modal');
+          const list = document.getElementById('experiment-history-list');
+          list.innerHTML = '<div class="text-cyan-200 text-center">Loading history...</div>';
+          modal.classList.remove('hidden');
+          const token = localStorage.getItem('access_token');
+          if (!token) return;
+          const projectId = getProjectIdFromQuery();
+          if (!projectId) return;
+          // Fetch experiment (to get experiment id)
+          let experimentId = null;
+          try {
+            const res = await fetch(`/projects/${encodeURIComponent(projectId)}/experiment`, { headers: { 'Authorization': 'Bearer ' + token } });
+            if (res.ok) {
+              const exp = await res.json();
+              experimentId = exp.id;
+            }
+          } catch (e) {}
+          if (!experimentId) {
+            list.innerHTML = '<div class="text-cyan-200 text-center">Experiment not found.</div>';
+            return;
+          }
+          // Fetch all protocol versions for this experiment
+          let versions = [];
+          try {
+            const res = await fetch(`/experiments/${encodeURIComponent(experimentId)}/versions`, { headers: { 'Authorization': 'Bearer ' + token } });
+            if (res.ok) versions = await res.json();
+          } catch (e) {}
+          if (!versions.length) {
+            list.innerHTML = '<div class="text-cyan-200 text-center">No version history found.</div>';
+            return;
+          }
+          // For each version, fetch steps
+          let history = [];
+          for (const v of versions) {
+            let steps = [];
+            try {
+              const res = await fetch(`/versions/${encodeURIComponent(v.id)}/steps`, { headers: { 'Authorization': 'Bearer ' + token } });
+              if (res.ok) steps = await res.json();
+            } catch (e) {}
+            history.push({
+              version: v,
+              steps: steps
+            });
+          }
+ // Render history
+          list.innerHTML = '';
+          history.forEach(h => {
+            const vDiv = document.createElement('div');
+            vDiv.className = 'glass p-4 rounded-lg flex flex-col gap-2 border border-cyan-400/10';
+            vDiv.innerHTML = `
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-cyan-300 font-semibold">Version:</span>
+                <span class="text-cyan-100">${h.version.version_label || h.version.id}</span>
+                <span class="text-cyan-400 text-xs ml-2">${h.version.created_at ? new Date(h.version.created_at).toLocaleString() : ''}</span>
+              </div>
+              <div class="text-cyan-200 text-sm mb-2">${h.version.metadata_ && h.version.metadata_.summary ? h.version.metadata_.summary : ''}</div>
+              <div class="ml-4">
+                <div class="text-cyan-300 text-xs mb-1">Steps:</div>
+                <ul class="list-disc ml-6">
+                  ${h.steps.map(s => `<li class="mb-1"><span class="text-cyan-100 font-semibold">${s.title}</span> <span class="text-cyan-400 text-xs">${s.updated_at ? new Date(s.updated_at).toLocaleString() : ''}</span><div class="text-cyan-200 text-xs">${s.content_markdown ? s.content_markdown.slice(0, 80) + (s.content_markdown.length > 80 ? '...' : '') : ''}</div></li>`).join('')}
+                </ul>
+              </div>
+            `;
+            list.appendChild(vDiv);
+          });
+        }
+        // Modal open/close logic
+        document.addEventListener('DOMContentLoaded', function() {
+          const btn = document.createElement('button');
+          btn.textContent = 'View Edit History';
+          btn.className = 'px-4 py-2 glass holo-glow rounded border border-cyan-400/30 hover:border-cyan-300 transition text-cyan-200 text-sm mb-4';
+          btn.onclick = showExperimentHistoryModal;
+          // Insert button below the 'Grade Experiment' button if present, else fallback to top of #view-flow or main
+          const gradeBtn = document.getElementById('grade-experiment-btn');
+          if (gradeBtn) {
+            gradeBtn.parentNode.insertBefore(btn, gradeBtn.nextSibling);
+          } else {
+            const flowSection = document.getElementById('view-flow');
+            if (flowSection) {
+              flowSection.insertBefore(btn, flowSection.firstChild);
+            } else {
+              const main = document.querySelector('main');
+              if (main) main.insertBefore(btn, main.firstChild);
+            }
+          }
+          document.getElementById('closeExperimentHistoryModal').onclick = function() {
+            document.getElementById('experiment-history-modal').classList.add('hidden');
+          };
+          window.onclick = function(e) {
+            if (e.target === document.getElementById('experiment-history-modal')) {
+              document.getElementById('experiment-history-modal').classList.add('hidden');
+            }
+          };
+        });
+      </script>
+      <!-- Paper Editor View -->
+      <section id="view-editor" class="view-section hidden" style="padding-left: 50px;">
+        <section id="paper-editor-section" class="flex flex-col md:flex-row gap-8 py-12 max-w-6xl mx-auto w-full" style="flex:1 1 0; min-height:calc(100vh - 120px); overflow:auto; box-sizing:border-box; padding-top: 80px;">
+          <!-- Editor and PDF Preview Side-by-Side -->
+          <div class="flex-1 flex flex-col gap-4 min-w-0">
+            <div class="flex flex-col gap-2">
+              <div class="flex items-center gap-4">
+                <h2 class="text-2xl font-bold text-cyan-200 mb-2 flex-1">Paper Editor</h2>
+                <button id="download-pdf-btn" class="px-4 py-2 glass holo-glow rounded border border-cyan-400/30 hover:border-cyan-300 transition text-cyan-200 text-sm"><i class="fas fa-file-pdf"></i> Download PDF</button>
+                <button id="journal-match-btn" class="px-4 py-2 glass holo-glow rounded border border-cyan-400/30 hover:border-cyan-300 transition text-cyan-200 text-sm"><i class="fas fa-search"></i> Find Journals</button>
+                <button id="open-copilot-btn" class="px-4 py-2 glass holo-glow rounded border border-cyan-400/30 hover:border-cyan-300 transition text-cyan-200 text-sm"><i class="fas fa-robot"></i> Copilot</button>
+              </div>
+              <div id="editor-toolbar" class="flex gap-2 mb-2"></div>
+              <div style="display:flex; align-items:stretch; background:transparent; border-radius:0.75rem; overflow:hidden; box-shadow:0 0 0 2px rgba(0,255,255,0.08);">
+                <div style="flex:1; min-width:0; padding-left:24px; padding-right:8px;">
+                  <div id="paper-ace-editor" class="glass rounded-xl holo-glow scanlines mb-2" style="min-height:400px; height:400px; font-size:1.1rem; width:100%;"></div>
+                </div>
+              </div>
+            </div>
+            <div id="journal-matches" class="flex flex-wrap gap-4 mt-4"></div>
+          </div>
+          <!-- PDF Preview -->
+          <div class="w-full md:w-1/3 flex flex-col gap-2 min-w-[320px] max-w-md">
+            <h3 class="text-cyan-200 text-lg font-semibold mb-2">PDF Preview</h3>
+            <iframe id="pdf-preview" class="glass rounded-xl holo-glow scanlines w-full" style="min-height:400px; height:400px; background:white;"></iframe>
+          </div>
+        </section>
+      </section>
+      <script src="paper-editor-ui.js"></script>
+    </div>
+  </main>
+  <footer class="py-8 text-center glass mt-16 relative z-10 border-t border-cyan-500/10">
+    <p class="text-sm text-cyan-200">&copy; 2025 Atlantis. All rights reserved.</p>
+  </footer>
+  <script>
+    // Sidebar navigation logic
+    const views = ['flow','chat','editor','grants','notebook'];
+    document.querySelectorAll('.sidebar-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        views.forEach(v => {
+          const el = document.getElementById('view-' + v);
+          if (el) el.classList.toggle('hidden', v !== this.dataset.view);
+        });
+      });
+    });
+    // Fetch and show experiment/project name at top
+function getProjectIdFromQuery() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('project_id');
+}
+async function showExperimentTitle() {
+  const projectId = getProjectIdFromQuery();
+  if (!projectId) return;
+  const token = localStorage.getItem('access_token');
+  if (!token) return;
+  try {
+    const res = await fetch(`/projects/${encodeURIComponent(projectId)}`, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!res.ok) return;
+    const project = await res.json();
+    document.getElementById('experiment-title').textContent = project.title || 'Untitled Experiment';
+  } catch (e) {}
+}
+document.addEventListener('DOMContentLoaded', showExperimentTitle);
+
+// Update settings link to include project_id in query string
+document.addEventListener('DOMContentLoaded', function() {
+  const projectId = getProjectIdFromQuery();
+  const settingsLink = document.getElementById('settings-link');
+  if (settingsLink && projectId) {
+    settingsLink.href = `experiment-settings.html?project_id=${encodeURIComponent(projectId)}`;
+  }
+});
+  </script>
+  <script>
+    // --- Dynamic Suggested Grants Logic ---
+async function renderSuggestedGrants() {
+  const token = localStorage.getItem('access_token');
+  if (!token) return;
+  // Fetch all grants
+  const res = await fetch('/grants', { headers: { 'Authorization': 'Bearer ' + token } });
+ 
+  if (!res.ok) return;
+  const grants = await res.json();
+  const list = document.getElementById('suggested-grants-list');
+  list.innerHTML = '';
+  // Fetch real user projects
+  let userProjects = [];
+  const projectsRes = await fetch('/projects', { headers: { 'Authorization': 'Bearer ' + token } });
+  if (projectsRes.ok) {
+    userProjects = await projectsRes.json();
+  }
+  // Get projectId from query string (preferred)
+  let projectId = getProjectIdFromQuery();
+  if (!projectId && userProjects.length > 0) projectId = userProjects[0].id;
+  let appStatusByGrant = {};
+  if (projectId) {
+    const appsRes = await fetch('/grant-applications', { headers: { 'Authorization': 'Bearer ' + token } });
+    if (appsRes.ok) {
+      const allApps = await appsRes.json();
+      allApps.forEach(app => {
+        if (app.project_id === projectId) {
+          appStatusByGrant[app.grant_id] = app.status;
+        }
+      });
+    }
+  }
+  if (!grants.length) {
+    list.innerHTML = '<div class="text-cyan-200 text-center col-span-2">No grants available at this time.</div>';
+    return;
+  }
+  grants.forEach(grant => {
+    let status = appStatusByGrant[grant.id];
+    let statusLabel = '';
+    if (status === 'pending') statusLabel = '<span class="ml-2 px-2 py-1 rounded bg-yellow-900 text-yellow-300 text-xs">Pending</span>';
+    if (status === 'shortlisted') statusLabel = '<span class="ml-2 px-2 py-1 rounded bg-green-900 text-green-300 text-xs">Approved</span>';
+    if (status === 'awarded') statusLabel = '<span class="ml-2 px-2 py-1 rounded bg-green-800 text-green-200 text-xs">Awarded</span>';
+    if (status === 'rejected') statusLabel = '<span class="ml-2 px-2 py-1 rounded bg-red-900 text-red-300 text-xs">Rejected</span>';
+    const div = document.createElement('div');
+    div.className = 'glass rounded-2xl p-6 holo-glow scanlines flex flex-col';
+    div.innerHTML = `
+      <div class="text-xl font-semibold text-cyan-100 mb-2">${grant.title || 'Untitled Grant'}</div>
+      <div class="text-cyan-200 mb-2">Funding: <span class="text-cyan-300">$${grant.total_funding_usd ? grant.total_funding_usd.toLocaleString() : (grant.amount ? grant.amount.toLocaleString() : '—')}</span></div>
+      <div class="text-cyan-100/80 mb-4">${grant.description || ''}</div>
+      ${status ? statusLabel : `<button class=\"text-cyan-300 underline hover:text-cyan-200 transition\" onclick=\"openGrantApplication('${grant.title.replace(/'/g, "\\'") || 'Untitled Grant'}', ${grant.total_funding_usd || grant.amount || 0}, '${grant.id}')\">Apply Now</button>`}
+    `;
+    list.appendChild(div);
+  });
+}
+document.addEventListener('DOMContentLoaded', renderSuggestedGrants);
+  </script>
+  <script>
+    // Copilot button and logic for all textareas
+  function addCopilotToTextarea(textarea) {
+    if (!textarea) return;
+    if (textarea.parentElement.querySelector('.copilot-btn')) return;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = '💡 Copilot';
+    btn.className = 'copilot-btn ml-2 px-3 py-1 rounded bg-cyan-800 text-cyan-100 text-xs hover:bg-cyan-700 transition';
+    btn.onclick = async function() {
+      btn.disabled = true;
+      btn.textContent = 'Thinking...';
+      const prompt = textarea.value || textarea.placeholder || 'Suggest content for this field.';
+      try {
+        const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer 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'
+          },
+          body: JSON.stringify({
+            model: 'gpt-3.5-turbo',
+            messages: [
+              { role: 'system', content: 'You are a helpful scientific writing assistant for experiment documentation and lab notebooks.' },
+              { role: 'user', content: prompt }
+            ]
+          })
+        });
+        const data = await resp.json();
+        const suggestion = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+        if (suggestion) textarea.value = suggestion.trim();
+        btn.textContent = '💡 Copilot';
+      } catch (e) {
+        btn.textContent = 'Try Again';
+      }
+      btn.disabled = false;
+    };
+    // textarea.parentElement.appendChild(btn);
+  }
+  document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('textarea').forEach(addCopilotToTextarea);
+  });
+  </script>
+  <script>
+    // --- RBAC: Enforce permissions on experiment.html (expanded for all features) ---
+let viewOnly = false;
+function disableEditingUI() {
+  viewOnly = true;
+  document.body.classList.add('view-only');
+  // Hide all editing UI for view-only users
+  document.body.classList.add('view-only');
+  // Hide chat, notebook, grants, and paper editor sections
+  const sectionsToHide = ['#view-chat', '#view-notebook', '#view-grants', '#view-editor'];
+  sectionsToHide.forEach(sel => {
+    const el = document.querySelector(sel);
+    if (el) el.classList.add('hidden');
+  });
+  // Hide sidebar buttons for those sections
+  document.querySelectorAll('.sidebar-btn').forEach(btn => {
+    const target = btn.dataset.target;
+    if (['chat','notebook','grants','editor'].includes(target)) {
+      btn.style.display = 'none';
+    }
+  });
+  // Hide the bottom bar
+  const bottomBar = document.querySelector('.bottom-bar');
+  if (bottomBar) bottomBar.style.display = 'none';
+  // Hide all leaderline delete overlays (arrow overlays)
+  document.querySelectorAll('.arrow-overlay').forEach(el => { el.style.display = 'none'; });
+  // Prevent leaderline deletion in flowchart (assumes leaderline delete buttons have a class or selector)
+  document.querySelectorAll('.leaderline-delete, .leaderline-remove, .delete-leaderline').forEach(btn => {
+    btn.style.display = 'none';
+    btn.disabled = true;
+  });
+  // Optionally, remove event listeners for leaderline deletion if needed
+  // Show view-only banner if not already present
+  if (!document.getElementById('view-only-banner')) {
+    const banner = document.createElement('div');
+    banner.id = 'view-only-banner';
+    banner.textContent = 'View Only: You do not have permission to edit this experiment.';
+    banner.className = 'fixed top-0 left-0 w-full bg-yellow-900 text-yellow-200 text-center py-2 z-50';
+    document.body.appendChild(banner);
+  }
+}
+function showAccessDenied() {
+  document.body.innerHTML = `<div class='fixed inset-0 flex items-center justify-center bg-black/90 z-50'><div class='glass rounded-2xl p-12 text-center max-w-lg'><h2 class='text-3xl font-bold text-red-400 mb-4'>Access Denied</h2><p class='text-cyan-200 mb-4'>You do not have permission to view or edit this experiment.</p><a href='/' class='text-cyan-300 underline'>Return Home</a></div></div>`;
+}
+function getProjectIdFromQuery() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('project_id') || params.get('id');
+}
+function getToken() {
+  return localStorage.getItem('access_token');
+}
+function getTokenUserId() {
+  const token = getToken();
+  if (!token) return null;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.sub || payload.identity || payload.user_id || payload.id;
+  } catch (e) { return null; }
+}
+async function enforceExperimentRBAC() {
+  const projectId = getProjectIdFromQuery();
+  const token = getToken();
+  if (!projectId || !token) return;
+  let experimentId = projectId;
+  try {
+    let expRes = await fetch(`/experiments/${encodeURIComponent(projectId)}`, { headers: { 'Authorization': 'Bearer ' + token } });
+    if (expRes.status === 404) {
+      const projRes = await fetch(`/projects/${encodeURIComponent(projectId)}`, { headers: { 'Authorization': 'Bearer ' + token } });
+      if (projRes.ok) {
+        const proj = await projRes.json();
+        const allExpRes = await fetch(`/experiments`, { headers: { 'Authorization': 'Bearer ' + token } });
+        if (allExpRes.ok) {
+          const experiments = await allExpRes.json();
+          const exp = experiments.find(e => e.title === proj.title && e.owner_id === proj.owner_id);
+          if (exp) {
+            experimentId = exp.id;
+            expRes = await fetch(`/experiments/${encodeURIComponent(exp.id)}`, { headers: { 'Authorization': 'Bearer ' + token } });
+          }
+        }
+      }
+    }
+    if (expRes.status === 403) {
+      showAccessDenied();
+      return;
+    }
+    if (!expRes.ok) return;
+    const exp = await expRes.json();
+    const userId = getTokenUserId();
+    const canEdit = (exp.owner_id === userId) || (Array.isArray(exp.collaborators) && exp.collaborators.includes(userId));
+    if (!canEdit) {
+      disableEditingUI();
+    }
+  } catch (e) { showAccessDenied(); }
+}
+document.addEventListener('DOMContentLoaded', enforceExperimentRBAC);
+  </script>
+</body>
+</html>

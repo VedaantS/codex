@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Futuristic Blueprint UI 2030</title>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+  <script src="https://kit.fontawesome.com/dac0a9835a.js" crossorigin="anonymous"></script>
+  <style>
+    body { font-family: 'Space Grotesk', sans-serif; }
+    .stroke-line { stroke: rgba(0,255,255,0.15); stroke-width: 0.5px; }
+    .glass { backdrop-filter: blur(14px) saturate(180%); background: rgba(10, 10, 30, 0.06); }
+    .holo-glow { box-shadow: 0 0 0.5px rgba(0,255,255,0.6), 0 0 8px rgba(0,255,255,0.2), 0 0 40px rgba(0,255,255,0.05); transition: box-shadow 0.4s ease-in-out; }
+    .holo-glow:hover { box-shadow: 0 0 1px rgba(0,255,255,0.9), 0 0 12px rgba(0,255,255,0.4), 0 0 60px rgba(0,255,255,0.1); }
+    .scanlines::before { content: ""; position: absolute; inset: 0;
+      background-image: repeating-linear-gradient(to bottom, rgba(255,255,255,0.02) 0px, transparent 1px, transparent 4px);
+      pointer-events: none; z-index: 10;
+    }
+    .flow-container { background: rgba(0,0,0,0.4); border: 0.5px solid rgba(0,255,255,0.2); overflow: auto; position: relative; }
+    .flow-grid { background-image: repeating-linear-gradient(0deg, rgba(0,255,255,0.1) 1px, transparent 1px),
+                   repeating-linear-gradient(90deg, rgba(0,255,255,0.1) 1px, transparent 1px);
+                  background-size: 50px 50px; }
+    .node { min-width: 120px; padding: 12px; background: rgba(20,20,40,0.8); border: 0.5px solid rgba(0,255,255,0.3); border-radius: 8px; color: #ccf; cursor: grab; position: absolute; user-select: none; }
+    .node.selected { border-color: cyan; }
+    .fullscreen-btn { position: absolute; top: 1rem; right: 1rem; z-index: 20; }
+    .drag-palette .node { position: relative; margin-bottom: 1rem; cursor: grab; }
+    .drag-palette { width: 200px; padding: 1rem; }
+        .editor, .preview { width: 100%; height: 300px; border: 0.5px solid rgba(0,255,255,0.3); border-radius: 8px; background: rgba(20,20,40,0.8); color: #ccf; padding: 1rem; }
+    .editor { resize: vertical; }
+    .preview { overflow: auto; }
+    .file-drop { border:2px dashed rgba(0,255,255,0.4); border-radius:8px; padding:2rem; text-align:center; background:rgba(10,10,20,0.4); cursor:pointer; }
+    .file-drop.dragover { background:rgba(10,10,30,0.6); }
+    .rating { display:flex; gap:.5rem; align-items:center; }
+    .rating input { accent-color:cyan; }
+
+  </style>
+  <!-- LeaderLine for arrows -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leader-line/1.0.7/leader-line.min.js"></script>
+  <script>
+    // Redirect if logged in
+    function parseJwt(token) {
+      try { return JSON.parse(atob(token.split('.')[1])); } catch (e) { return {}; }
+    }
+    (async function() {
+      const token = localStorage.getItem('access_token');
+      if (token) {
+        const userId = parseJwt(token).sub;
+        if (userId) {
+          const res = await fetch('/users/' + userId, { headers: { 'Authorization': 'Bearer ' + token } });
+          if (res.ok) {
+            const user = await res.json();
+            if (user.role === 'funder') {
+              window.location.replace('/funder-homepage.html');
+            } else {
+              window.location.replace('/scientist-homepage.html');
+            }
+            return;
+          } else {
+            // Invalid token, remove and stay
+            localStorage.removeItem('access_token');
+          }
+        }
+      }
+    })();
+  </script>
+</head>
+<body class="bg-black text-white antialiased overflow-x-hidden">
+
+    <nav class="fixed top-0 w-full flex justify-between items-center px-10 py-4 glass border-b border-cyan-500/10 z-50" style="z-index: 100;">
+    <a href="/" class="text-2xl font-bold tracking-wide text-cyan-300">atlantis [CODEX]</a>
+    <ul class="flex space-x-8 text-sm">
+      <li><a href="#" class="hover:text-cyan-400 transition">Home</a></li>
+      <li><a href="#features" class="hover:text-cyan-400 transition">Grant</a></li>
+      <li><a href="#dashboard" class="hover:text-cyan-400 transition">Frontier</a></li>
+      <li><a href="#contact" class="hover:text-cyan-400 transition">Publish</a></li>
+      <li><a href="#contact" class="hover:text-cyan-400 transition">Chat</a></li>
+      <li><a href="/profile.html" class="hover:text-cyan-400 transition">Profile</a></li>
+    </ul>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="min-h-screen flex items-center justify-center relative">
+    <!-- Blueprint Grid -->
+    <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <pattern id="grid" width="80" height="80" patternUnits="userSpaceOnUse">
+          <path d="M80 0 L0 0 0 80" class="stroke-line" />
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#grid)" />
+    </svg>
+    <!-- Hero Card -->
+    <div class="glass p-16 rounded-3xl max-w-2xl z-10 holo-glow scanlines relative">
+      <h1 class="text-6xl font-extrabold mb-6 tracking-tight text-cyan-200">Welcome to Codex.</h1>
+      <p class="text-lg mb-6 leading-relaxed">
+      Technology is not neutral. It is a force multiplier. The question is not whether we build—but whether we build toward something worthy.
+      <br><br>We are not here to automate hedge funds, or optimize ad clicks, or disappear into digital theme parks. We are here to solve the hard problems. AI alignment. Nuclear risk. Neurodegeneration. Pandemic prevention. Energy abundance. National resilience. Civilizational trust.
+      <br><br>This is the politics of repair. The economics of purpose. The science of consequence.
+
+      </p>
+      <a href="#dashboard" class="inline-block px-10 py-4 border border-cyan-400/30 rounded-xl text-sm tracking-wider hover:border-cyan-300 transition">Explore Dashboard</a>
+    </div>
+    <svg class="absolute inset-0 w-full h-full pointer-events-none z-0 opacity-20 animate-spin-slow" viewBox="0 0 200 200">
+      <circle cx="100" cy="100" r="90" stroke="cyan" stroke-width="0.4" fill="none" stroke-dasharray="4 4" />
+    </svg>
+  </section>
+
+    <div class="h-32"></div>
+
+  <footer class="py-8 text-center glass mt-16 relative z-10 border-t border-cyan-500/10">
+    <p class="text-sm text-cyan-200">&copy; 2025 Atlantis. All rights reserved.</p>
+  </footer>
+
+</body>
+
+</html>

@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Futuristic Blueprint UI 2030</title>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+  <script src="https://kit.fontawesome.com/dac0a9835a.js" crossorigin="anonymous"></script>
+  <style>
+    body { font-family: 'Space Grotesk', sans-serif; }
+    .stroke-line { stroke: rgba(0,255,255,0.15); stroke-width: 0.5px; }
+    .glass { backdrop-filter: blur(14px) saturate(180%); background: rgba(10, 10, 30, 0.06); }
+    .holo-glow { box-shadow: 0 0 0.5px rgba(0,255,255,0.6), 0 0 8px rgba(0,255,255,0.2), 0 0 40px rgba(0,255,255,0.05); transition: box-shadow 0.4s ease-in-out; }
+    .holo-glow:hover { box-shadow: 0 0 1px rgba(0,255,255,0.9), 0 0 12px rgba(0,255,255,0.4), 0 0 60px rgba(0,255,255,0.1); }
+    .scanlines::before { content: ""; position: absolute; inset: 0;
+      background-image: repeating-linear-gradient(to bottom, rgba(255,255,255,0.02) 0px, transparent 1px, transparent 4px);
+      pointer-events: none; z-index: 10;
+    }
+    .flow-container { background: rgba(0,0,0,0.4); border: 0.5px solid rgba(0,255,255,0.2); overflow: auto; position: relative; }
+    .flow-grid { background-image: repeating-linear-gradient(0deg, rgba(0,255,255,0.1) 1px, transparent 1px),
+                   repeating-linear-gradient(90deg, rgba(0,255,255,0.1) 1px, transparent 1px);
+                  background-size: 50px 50px; }
+    .node { min-width: 120px; padding: 12px; background: rgba(20,20,40,0.8); border: 0.5px solid rgba(0,255,255,0.3); border-radius: 8px; color: #ccf; cursor: grab; position: absolute; user-select: none; }
+    .node.selected { border-color: cyan; }
+    .fullscreen-btn { position: absolute; top: 1rem; right: 1rem; z-index: 20; }
+    .drag-palette .node { position: relative; margin-bottom: 1rem; cursor: grab; }
+    .drag-palette { width: 200px; padding: 1rem; }
+        .editor, .preview { width: 100%; height: 300px; border: 0.5px solid rgba(0,255,255,0.3); border-radius: 8px; background: rgba(20,20,40,0.8); color: #ccf; padding: 1rem; }
+    .editor { resize: vertical; }
+    .preview { overflow: auto; }
+    .file-drop { border:2px dashed rgba(0,255,255,0.4); border-radius:8px; padding:2rem; text-align:center; background:rgba(10,10,20,0.4); cursor:pointer; }
+    .file-drop.dragover { background:rgba(10,10,30,0.6); }
+    .rating { display:flex; gap:.5rem; align-items:center; }
+    .rating input { accent-color:cyan; }
+    /* Ensure LeaderLine arrows are always on top */
+    .leader-line, .leader-line-canvas, svg.leader-line {
+      z-index: 99999 !important;
+      pointer-events: none;
+    }
+
+  </style>
+  <!-- LeaderLine for arrows -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leader-line/1.0.7/leader-line.min.js"></script>
+</head>
+<body class="bg-black text-white antialiased overflow-x-hidden flex flex-col h-screen">
+  <div id="main-content-wrapper" style="flex:1; display:flex; flex-direction:row; min-height:100vh;">
+    <!-- Sidebar for Grants -->
+    <aside id="grant-sidebar" class="w-64 bg-[#101020] glass border-r border-cyan-500/10 h-screen fixed left-0 top-0 z-40 flex flex-col pt-12 transition-all duration-300" style="min-width:220px;">
+      <button id="collapse-sidebar-btn" class="absolute top-4 right-2 text-cyan-300 bg-transparent hover:bg-cyan-900/30 rounded p-1 z-50 focus:outline-none" title="Collapse sidebar">
+        <i class="fas fa-angle-double-left"></i>
+      </button>
+      <div class="flex flex-col items-center mb-6 relative">
+        <span class="text-cyan-300 text-lg font-bold">Your Grants</span>
+      </div>
+      <nav id="grant-list" class="flex-1 overflow-y-auto px-2 space-y-1">
+        <!-- Grants and nested experiments will be injected here -->
+      </nav>
+      <!-- Quick Navigation Links (iframe context switch) -->
+      <ul id="quick-nav-links" class="flex flex-col gap-1 px-4 mt-2 mb-2 sidebar-collapsible">
+        <li><a href="#" class="text-cyan-200 hover:text-cyan-400 transition text-sm" data-iframe="/kdmap.html"><i class="fas fa-globe mr-2"></i>Frontier</a></li>
+        <li><a href="#" class="text-cyan-200 hover:text-cyan-400 transition text-sm" data-iframe="/chat.html"><i class="fas fa-comments mr-2"></i>Chat</a></li>
+        <li><a href="#" class="text-cyan-200 hover:text-cyan-400 transition text-sm" data-iframe="/labs.html"><i class="fas fa-flask mr-2"></i>Explore</a></li>
+        <li><a href="#" class="text-cyan-200 hover:text-cyan-400 transition text-sm" data-iframe="/profile.html"><i class="fas fa-user mr-2"></i>Profile</a></li>
+      </ul>
+      <button id="create-grant-btn" class="w-11/12 mx-auto my-4 px-4 py-2 glass holo-glow rounded border border-cyan-400/30 hover:border-cyan-300 transition text-cyan-200 text-sm flex items-center justify-center gap-2 sidebar-collapsible">
+        <i class="fas fa-plus"></i> Create New Grant
+      </button>
+    </aside>
+    <!-- Main Content Area (iframe for grant/experiment dashboards) -->
+    <main id="main-content" class="flex-1 ml-64 relative min-h-screen flex flex-col transition-all duration-300">
+      <!-- Tab bar for experiment dashboard/flowchart (hidden by default) -->
+      <div id="experiment-tab-bar" class="flex gap-2 px-8 pt-8 pb-2" style="display:none;">
+        <button id="tab-dashboard-btn" class="tab-btn text-cyan-400 font-bold border-b-2 border-cyan-400 pb-1 px-4 bg-transparent">Dashboard</button>
+        <button id="tab-hub-btn" class="tab-btn text-cyan-200 hover:text-cyan-400 border-b-2 border-transparent pb-1 px-4 bg-transparent">Experiment Hub</button>
+      </div>
+      <iframe id="dashboard-iframe" src="" style="width:100%;height:100vh;border:none;display:none;"></iframe>
+      <div id="main-placeholder" class="flex-1 flex flex-col h-full justify-center items-center">
+        <h2 class="text-3xl font-bold text-cyan-200 mb-4">Welcome, Funder!</h2>
+        <p class="text-cyan-100/80 mb-8">Select a grant or experiment from the sidebar to view its dashboard.</p>
+      </div>
+    </main>
+  </div>
+  <footer class="py-8 text-center glass relative z-10 border-t border-cyan-500/10 w-full">
+    <p class="text-sm text-cyan-200">&copy; 2025 Atlantis. All rights reserved.</p>
+  </footer>
+
+  <!-- Grant Application Answers Panel (persistent sidebar) -->
+  <div id="grant-answers-panel" class="fixed top-0 right-0 h-full w-[420px] max-w-full bg-[#101020] glass border-l border-cyan-500/10 z-50 flex flex-col shadow-xl transition-transform duration-300 translate-x-full">
+    <div class='flex items-center justify-between p-4 border-b border-cyan-500/10'>
+      <h2 class='text-xl font-bold text-cyan-200'>Grant Application Answers</h2>
+      <button id='closeGrantAnswersPanel' class='text-cyan-300 text-2xl'>&times;</button>
+    </div>
+    <div id='grant-answers-panel-list' class='flex-1 overflow-y-auto p-6'></div>
+  </div>
+
+  <!-- Modal for New Grant -->
+  <div id="grantModal" class="fixed inset-0 flex items-center justify-center bg-black/60 z-50 hidden">
+    <div class="bg-[#101020] glass rounded-2xl p-8 max-w-md w-full relative">
+      <button id="closeGrantModal" class="absolute top-4 right-4 text-cyan-300 text-2xl">&times;</button>
+      <h2 class="text-2xl font-bold text-cyan-200 mb-6 text-center">Create New Grant</h2>
+      <form id="grantForm" class="flex flex-col gap-4">
+        <input id="grantTitle" type="text" placeholder="Grant Title" class="p-2 rounded glass border border-cyan-400/20 text-cyan-100" required />
+        <textarea id="grantDesc" placeholder="Description" class="p-2 rounded glass border border-cyan-400/20 text-cyan-100" required></textarea>
+        <input id="grantFunding" type="number" placeholder="Total Funding (USD)" class="p-2 rounded glass border border-cyan-400/20 text-cyan-100" required />
+        <div id="questions-section" class="flex flex-col gap-2">
+          <label class="text-cyan-200">Application Questions</label>
+          <div id="questions-list"></div>
+          <div class="flex gap-2 mt-2">
+            <input id="new-question-input" type="text" placeholder="Add a question..." class="flex-1 p-2 rounded glass border border-cyan-400/20 text-cyan-100" />
+            <button id="add-question-btn" type="button" class="px-3 py-1 rounded glass border border-cyan-400/20 text-cyan-200">Add</button>
+          </div>
+        </div>
+        <button type="submit" class="mt-2 px-4 py-2 glass holo-glow rounded border border-cyan-400/30 hover:border-cyan-300 transition text-cyan-200 text-base font-semibold">Create Grant</button>
+      </form>
+      <div id="grantMsg" class="text-cyan-300 mt-4 text-center"></div>
+    </div>
+  </div>
+
+  <script>
+    // Sidebar collapse/expand logic
+    (function() {
+      const sidebar = document.getElementById('grant-sidebar');
+      const collapseBtn = document.getElementById('collapse-sidebar-btn');
+      collapseBtn.onclick = function() {
+        if (sidebar.style.width === '64px') {
+          sidebar.style.width = '16rem';
+          document.getElementById('main-content').style.marginLeft = '16rem';
+        } else {
+          sidebar.style.width = '64px';
+          document.getElementById('main-content').style.marginLeft = '64px';
+        }
+      };
+    })();
+
+    // --- Populate Sidebar with Grants and Experiments ---
+    async function populateGrantSidebar() {
+      const list = document.getElementById('grant-list');
+      list.innerHTML = '<div class="text-cyan-200 text-center">Loading grants...</div>';
+      const token = localStorage.getItem('access_token');
+      if (!token) return;
+      // Fetch all grants
+      let grants = [];
+      try {
+        const res = await fetch('/grants', { headers: { 'Authorization': 'Bearer ' + token } });
+        if (res.ok) grants = await res.json();
+      } catch (e) {}
+      // Fetch all applications
+      let applications = [];
+      try {
+        const res = await fetch('/grant-applications', { headers: { 'Authorization': 'Bearer ' + token } });
+        if (res.ok) applications = await res.json();
+      } catch (e) {}
+      // Fetch all experiments
+      let experiments = [];
+      try {
+        const res = await fetch('/projects', { headers: { 'Authorization': 'Bearer ' + token } });
+        if (res.ok) experiments = await res.json();
+      } catch (e) {}
+      // For each grant, show as top-level, with nested accepted and pending experiments
+      list.innerHTML = '';
+      for (const grant of grants) {
+        const grantDiv = document.createElement('div');
+        grantDiv.className = 'mb-2';
+        // Grant header
+        const grantHeader = document.createElement('button');
+        grantHeader.className = 'w-full text-left px-3 py-2 rounded font-bold text-cyan-200 hover:bg-cyan-900/20 transition';
+        grantHeader.textContent = grant.title || 'Untitled Grant';
+        grantHeader.onclick = () => {
+          // Toggle nested experiments/applicants
+          const nested = grantDiv.querySelector('.nested-experiments');
+          if (nested) {
+            nested.style.display = nested.style.display === 'none' ? '' : 'none';
+          }
+        };
+        grantDiv.appendChild(grantHeader);
+        // Nested container
+        const nestedDiv = document.createElement('div');
+        nestedDiv.className = 'nested-experiments ml-2';
+        // Nested: accepted experiments (selected applicants)
+        const accepted = applications.filter(a => a.grant_id === grant.id && (a.status === 'shortlisted' || a.status === 'awarded'));
+        if (accepted.length) {
+          const accList = document.createElement('div');
+          accList.className = 'mb-1';
+          for (const app of accepted) {
+            const exp = experiments.find(e => e.id === app.project_id);
+            const expBtn = document.createElement('button');
+            expBtn.className = 'block w-full text-left px-4 py-1 rounded text-cyan-100 hover:bg-cyan-900/10';
+            expBtn.textContent = exp ? (exp.title || 'Untitled Experiment') : 'Experiment';
+            expBtn.onclick = (e) => {
+              e.stopPropagation();
+              openExperimentHub(exp ? exp.id : app.project_id, grant.id, app.id);
+            };
+            accList.appendChild(expBtn);
+          }
+          // Label for accepted
+          const accLabel = document.createElement('div');
+          accLabel.className = 'text-xs text-cyan-300 font-semibold px-4 pt-2 pb-1';
+          accLabel.textContent = 'Accepted Experiments';
+          nestedDiv.appendChild(accLabel);
+          nestedDiv.appendChild(accList);
+        }
+        // Nested: pending applicants
+        const pending = applications.filter(a => a.grant_id === grant.id && a.status === 'pending');
+        if (pending.length) {
+          const pendList = document.createElement('div');
+          pendList.className = 'mb-2';
+          for (const app of pending) {
+            const exp = experiments.find(e => e.id === app.project_id);
+            const expBtn = document.createElement('button');
+            expBtn.className = 'block w-full text-left px-4 py-1 rounded text-purple-400 hover:bg-purple-900/10';
+            expBtn.textContent = exp ? (exp.title || 'Untitled Experiment') : 'Experiment';
+            expBtn.onclick = (e) => {
+              e.stopPropagation();
+              openExperimentHub(exp ? exp.id : app.project_id, grant.id, app.id, true);
+            };
+            pendList.appendChild(expBtn);
+          }
+          // Label for pending
+          const pendLabel = document.createElement('div');
+          pendLabel.className = 'text-xs text-purple-300 font-semibold px-4 pt-2 pb-1';
+          pendLabel.textContent = 'Pending Applicants';
+          nestedDiv.appendChild(pendLabel);
+          nestedDiv.appendChild(pendList);
+        }
+        // Hide nested by default
+        nestedDiv.style.display = 'none';
+        grantDiv.appendChild(nestedDiv);
+        list.appendChild(grantDiv);
+      }
+    }
+    document.addEventListener('DOMContentLoaded', populateGrantSidebar);
+
+    // --- Open Grant Dashboard ---
+    function openGrantDashboard(grantId) {
+      document.getElementById('main-placeholder').style.display = 'none';
+      const iframe = document.getElementById('dashboard-iframe');
+      iframe.style.display = 'block';
+      iframe.src = `grant-dashboard.html?grant_id=${encodeURIComponent(grantId)}`;
+    }
+    // --- Open Experiment Hub (with grant context) ---
+    function openExperimentHub(expId, grantId, appId, isPending) {
+      document.getElementById('main-placeholder').style.display = 'none';
+      const iframe = document.getElementById('dashboard-iframe');
+      iframe.style.display = 'block';
+      // Show tab bar for experiment
+      document.getElementById('experiment-tab-bar').style.display = 'flex';
+      // Store current experiment context
+      window._currentExpTabCtx = { expId, grantId, appId, isPending };
+      // Default to dashboard tab
+      setExperimentTab('dashboard');
+    }
+    // Tab switching logic
+    function setExperimentTab(tab) {
+      const ctx = window._currentExpTabCtx;
+      if (!ctx) return;
+      const iframe = document.getElementById('dashboard-iframe');
+      // Update tab button styles
+      document.getElementById('tab-dashboard-btn').classList.toggle('text-cyan-400', tab==='dashboard');
+      document.getElementById('tab-dashboard-btn').classList.toggle('font-bold', tab==='dashboard');
+      document.getElementById('tab-dashboard-btn').classList.toggle('border-cyan-400', tab==='dashboard');
+      document.getElementById('tab-hub-btn').classList.toggle('text-cyan-400', tab==='hub');
+      document.getElementById('tab-hub-btn').classList.toggle('font-bold', tab==='hub');
+      document.getElementById('tab-hub-btn').classList.toggle('border-cyan-400', tab==='hub');
+      // Set iframe src
+      let url = `experiment-dashboard.html?experiment_id=${encodeURIComponent(ctx.expId)}&grant_id=${encodeURIComponent(ctx.grantId)}&application_id=${encodeURIComponent(ctx.appId)}`;
+      if (ctx.isPending) url += '&pending=1';
+      if (tab === 'hub') url += '&tab=hub';
+      iframe.src = url;
+    }
+    document.getElementById('tab-dashboard-btn').onclick = function() { setExperimentTab('dashboard'); };
+    document.getElementById('tab-hub-btn').onclick = function() { setExperimentTab('hub'); };
+    // Hide tab bar when not viewing experiment
+    document.getElementById('dashboard-iframe').addEventListener('load', function() {
+      const src = this.src || '';
+      if (!src.includes('experiment-dashboard.html')) {
+        document.getElementById('experiment-tab-bar').style.display = 'none';
+        window._currentExpTabCtx = null;
+      }
+    });
+    // Add a persistent sidebar panel for application answers
+    (function() {
+      // Create the panel if it doesn't exist
+      let panel = document.getElementById('grant-answers-panel');
+      if (!panel) {
+        panel = document.createElement('div');
+        panel.id = 'grant-answers-panel';
+        panel.className = 'fixed top-0 right-0 h-full w-[420px] max-w-full bg-[#101020] glass border-l border-cyan-500/10 z-50 flex flex-col shadow-xl transition-transform duration-300 translate-x-full';
+        panel.innerHTML = `
+          <div class='flex items-center justify-between p-4 border-b border-cyan-500/10'>
+            <h2 class='text-xl font-bold text-cyan-200'>Grant Application Answers</h2>
+            <button id='closeGrantAnswersPanel' class='text-cyan-300 text-2xl'>&times;</button>
+          </div>
+          <div id='grant-answers-panel-list' class='flex-1 overflow-y-auto p-6'></div>
+        `;
+        document.body.appendChild(panel);
+        document.getElementById('closeGrantAnswersPanel').onclick = function() {
+          panel.style.transform = 'translateX(100%)';
+        };
+      }
+      // Expose a function to show answers in the panel
+      window.showGrantAnswersPanel = async function(appId) {
+        panel.style.transform = 'translateX(0)';
+        const list = document.getElementById('grant-answers-panel-list');
+        list.innerHTML = '<div class="text-cyan-200 text-center">Loading answers...</div>';
+        const token = localStorage.getItem('access_token');
+        if (!token) return;
+        let app = null;
+        try {
+          const res = await fetch(`/grant-applications/${encodeURIComponent(appId)}`, { headers: { 'Authorization': 'Bearer ' + token } });
+          if (res.ok) app = await res.json();
+        } catch (e) {}
+        if (!app || !app.answers) {
+          list.innerHTML = '<div class="text-cyan-200 text-center">No answers found.</div>';
+          return;
+        }
+        list.innerHTML = '';
+        if (Array.isArray(app.application_questions) && app.application_questions.length > 0) {
+          for (let i = 0; i < app.application_questions.length; i++) {
+            const q = app.application_questions[i];
+            const a = app.answers[i] || '';
+            const qaDiv = document.createElement('div');
+            qaDiv.className = 'mb-4';
+            qaDiv.innerHTML = `<div class='text-cyan-300 font-semibold mb-1'>${q}</div><div class='text-cyan-100'>${a || '<span class="italic text-cyan-400">No answer</span>'}</div>`;
+            list.appendChild(qaDiv);
+          }
+        } else {
+          for (const [q, a] of Object.entries(app.answers)) {
+            const qaDiv = document.createElement('div');
+            qaDiv.className = 'mb-4';
+            qaDiv.innerHTML = `<div class='text-cyan-300 font-semibold mb-1'>${q}</div><div class='text-cyan-100'>${a}</div>`;
+            list.appendChild(qaDiv);
+          }
+        }
+      };
+    })();
+    // --- Create New Grant Modal Logic ---
+    document.getElementById('create-grant-btn').onclick = function() {
+      document.getElementById('grantModal').classList.remove('hidden');
+    };
+    document.getElementById('closeGrantModal').onclick = function() {
+      document.getElementById('grantModal').classList.add('hidden');
+      document.getElementById('grantMsg').innerText = '';
+    };
+    // Application Questions logic
+    const questions = [];
+    const questionsList = document.getElementById('questions-list');
+    const newQuestionInput = document.getElementById('new-question-input');
+    const addQuestionBtn = document.getElementById('add-question-btn');
+    function renderQuestions() {
+      questionsList.innerHTML = '';
+      questions.forEach((q, idx) => {
+        const div = document.createElement('div');
+        div.className = 'flex items-center gap-2';
+        div.innerHTML = `<span class='flex-1 text-cyan-100'>${q}</span><button type='button' class='text-red-400 hover:text-red-600' data-idx='${idx}' title='Remove'>&times;</button>`;
+        div.querySelector('button').onclick = function() {
+          questions.splice(idx, 1);
+          renderQuestions();
+        };
+        questionsList.appendChild(div);
+      });
+    }
+    addQuestionBtn.onclick = function() {
+      const val = newQuestionInput.value.trim();
+      if (val) {
+        questions.push(val);
+        newQuestionInput.value = '';
+        renderQuestions();
+      }
+    };
+    newQuestionInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        addQuestionBtn.click();
+      }
+    });
+    // Handle grant creation
+    document.getElementById('grantForm').onsubmit = async function(e) {
+      e.preventDefault();
+      const token = localStorage.getItem('access_token');
+      if (!token) { window.location.href = '/login'; return; }
+      const userId = (function parseJwt(token) { try { return JSON.parse(atob(token.split('.')[1])).sub; } catch (e) { return null; } })(token);
+      if (!userId) { window.location.href = '/login'; return; }
+      const title = document.getElementById('grantTitle').value;
+      const description = document.getElementById('grantDesc').value;
+      const total_funding_usd = document.getElementById('grantFunding').value;
+      const data = {
+        title,
+        description,
+        total_funding_usd,
+        application_questions: questions,
+        created_by_id: userId
+      };
+      const res = await fetch('/grants', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify(data)
+      });
+      if (res.ok) {
+        document.getElementById('grantMsg').innerText = 'Grant created!';
+        setTimeout(() => { document.getElementById('grantModal').classList.add('hidden'); document.getElementById('grantMsg').innerText = ''; populateGrantSidebar(); }, 1200);
+      } else {
+        document.getElementById('grantMsg').innerText = 'Error creating grant.';
+      }
+    };
+
+    // Quick nav links: change iframe context
+    const quickNav = document.getElementById('quick-nav-links');
+    if (quickNav) {
+      quickNav.querySelectorAll('a[data-iframe]').forEach(link => {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          const url = link.getAttribute('data-iframe');
+          document.getElementById('main-placeholder').style.display = 'none';
+          const iframe = document.getElementById('dashboard-iframe');
+          iframe.style.display = 'block';
+          iframe.src = url;
+        });
+      });
+    }
+  </script>
+</body>
+</html>

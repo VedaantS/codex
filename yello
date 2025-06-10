@@ -1,0 +1,96 @@
+127.0.0.1 - - [10/Jun/2025 00:46:52] "POST /projects/28680825-4d25-404e-bf62-09da6afa5faf/fork HTTP/1.1" 500 -
+Traceback (most recent call last):
+  File "/opt/homebrew/lib/python3.13/site-packages/sqlalchemy/engine/default.py", line 913, in _deliver_insertmanyvalues_batches
+    rows_by_sentinel[sentinel_keys]
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+KeyError: '10520f3a-8bc7-4fdf-9ad3-e1d077f8887c'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/opt/homebrew/lib/python3.13/site-packages/flask/app.py", line 1536, in __call__
+    return self.wsgi_app(environ, start_response)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/lib/python3.13/site-packages/flask/app.py", line 1514, in wsgi_app
+    response = self.handle_exception(e)
+  File "/opt/homebrew/lib/python3.13/site-packages/flask_cors/extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ~^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/lib/python3.13/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/opt/homebrew/lib/python3.13/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/opt/homebrew/lib/python3.13/site-packages/flask_cors/extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ~^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/lib/python3.13/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/opt/homebrew/lib/python3.13/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/opt/homebrew/lib/python3.13/site-packages/flask_jwt_extended/view_decorators.py", line 170, in decorator
+    return current_app.ensure_sync(fn)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/vedaantsrivastava/mission99/codex_api.py", line 1645, in fork_project
+    db.session.commit()
+    ~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/lib/python3.13/site-packages/sqlalchemy/orm/scoping.py", line 599, in commit
+    return self._proxied.commit()
+           ~~~~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/lib/python3.13/site-packages/sqlalchemy/orm/session.py", line 2032, in commit
+    trans.commit(_to_root=True)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "<string>", line 2, in commit
+  File "/opt/homebrew/lib/python3.13/site-packages/sqlalchemy/orm/state_changes.py", line 139, in _go
+    ret_value = fn(self, *arg, **kw)
+  File "/opt/homebrew/lib/python3.13/site-packages/sqlalchemy/orm/session.py", line 1313, in commit
+    self._prepare_impl()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "<string>", line 2, in _prepare_impl
+  File "/opt/homebrew/lib/python3.13/site-packages/sqlalchemy/orm/state_changes.py", line 139, in _go
+    ret_value = fn(self, *arg, **kw)
+  File "/opt/homebrew/lib/python3.13/site-packages/sqlalchemy/orm/session.py", line 1288, in _prepare_impl
+    self.session.flush()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/lib/python3.13/site-packages/sqlalchemy/orm/session.py", line 4353, in flush
+    self._flush(objects)
+    ~~~~~~~~~~~^^^^^^^^^
+  File "/opt/homebrew/lib/python3.13/site-packages/sqlalchemy/orm/session.py", line 4488, in _flush
+    with util.safe_reraise():
+         ~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/lib/python3.13/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/opt/homebrew/lib/python3.13/site-packages/sqlalchemy/orm/session.py", line 4449, in _flush
+    flush_context.execute()
+    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/lib/python3.13/site-packages/sqlalchemy/orm/unitofwork.py", line 466, in execute
+    rec.execute(self)
+    ~~~~~~~~~~~^^^^^^
+  File "/opt/homebrew/lib/python3.13/site-packages/sqlalchemy/orm/unitofwork.py", line 642, in execute
+    util.preloaded.orm_persistence.save_obj(
+    ^
+  File "/opt/homebrew/lib/python3.13/site-packages/sqlalchemy/orm/persistence.py", line 93, in save_obj
+    _emit_insert_statements(
+    ^
+  File "/opt/homebrew/lib/python3.13/site-packages/sqlalchemy/orm/persistence.py", line 1143, in _emit_insert_statements
+    result = connection.execute(
+    
+  File "/opt/homebrew/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1416, in execute
+    return meth(
+    
+  File "/opt/homebrew/lib/python3.13/site-packages/sqlalchemy/sql/elements.py", line 523, in _execute_on_connection
+    return connection._execute_clauseelement(
+    
+  File "/opt/homebrew/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1638, in _execute_clauseelement
+    ret = self._execute_context(
+    
+  File "/opt/homebrew/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1841, in _execute_context
+    return self._exec_insertmany_context(dialect, context)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 2030, in _exec_insertmany_context
+    for imv_batch in dialect._deliver_insertmanyvalues_batches(
+    
+  File "/opt/homebrew/lib/python3.13/site-packages/sqlalchemy/engine/default.py", line 920, in _deliver_insertmanyvalues_batches
+    raise exc.InvalidRequestError(
+    ^^^^^^^^^
+sqlalchemy.exc.InvalidRequestError: Can't match sentinel values in result set to parameter sets; key '10520f3a-8bc7-4fdf-9ad3-e1d077f8887c' was not found. There may be a mismatch between the datatype passed to the DBAPI driver vs. that which it returns in a result row.  Ensure the given Python value matches the expected result type *exactly*, taking care to not rely upon implicit conversions which may occur such as when using strings in place of UUID or integer values, etc. 

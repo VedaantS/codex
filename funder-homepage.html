@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Futuristic Blueprint UI 2030</title>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+  <script src="https://kit.fontawesome.com/dac0a9835a.js" crossorigin="anonymous"></script>
+  <style>
+    body { font-family: 'Space Grotesk', sans-serif; }
+    .stroke-line { stroke: rgba(0,255,255,0.15); stroke-width: 0.5px; }
+    .glass { backdrop-filter: blur(14px) saturate(180%); background: rgba(10, 10, 30, 0.06); }
+    .holo-glow { box-shadow: 0 0 0.5px rgba(0,255,255,0.6), 0 0 8px rgba(0,255,255,0.2), 0 0 40px rgba(0,255,255,0.05); transition: box-shadow 0.4s ease-in-out; }
+    .holo-glow:hover { box-shadow: 0 0 1px rgba(0,255,255,0.9), 0 0 12px rgba(0,255,255,0.4), 0 0 60px rgba(0,255,255,0.1); }
+    .scanlines::before { content: ""; position: absolute; inset: 0;
+      background-image: repeating-linear-gradient(to bottom, rgba(255,255,255,0.02) 0px, transparent 1px, transparent 4px);
+      pointer-events: none; z-index: 10;
+    }
+    .flow-container { background: rgba(0,0,0,0.4); border: 0.5px solid rgba(0,255,255,0.2); overflow: auto; position: relative; }
+    .flow-grid { background-image: repeating-linear-gradient(0deg, rgba(0,255,255,0.1) 1px, transparent 1px),
+                   repeating-linear-gradient(90deg, rgba(0,255,255,0.1) 1px, transparent 1px);
+                  background-size: 50px 50px; }
+    .node { min-width: 120px; padding: 12px; background: rgba(20,20,40,0.8); border: 0.5px solid rgba(0,255,255,0.3); border-radius: 8px; color: #ccf; cursor: grab; position: absolute; user-select: none; }
+    .node.selected { border-color: cyan; }
+    .fullscreen-btn { position: absolute; top: 1rem; right: 1rem; z-index: 20; }
+    .drag-palette .node { position: relative; margin-bottom: 1rem; cursor: grab; }
+    .drag-palette { width: 200px; padding: 1rem; }
+        .editor, .preview { width: 100%; height: 300px; border: 0.5px solid rgba(0,255,255,0.3); border-radius: 8px; background: rgba(20,20,40,0.8); color: #ccf; padding: 1rem; }
+    .editor { resize: vertical; }
+    .preview { overflow: auto; }
+    .file-drop { border:2px dashed rgba(0,255,255,0.4); border-radius:8px; padding:2rem; text-align:center; background:rgba(10,10,20,0.4); cursor:pointer; }
+    .file-drop.dragover { background:rgba(10,10,30,0.6); }
+    .rating { display:flex; gap:.5rem; align-items:center; }
+    .rating input { accent-color:cyan; }
+
+  </style>
+  <!-- LeaderLine for arrows -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leader-line/1.0.7/leader-line.min.js"></script>
+</head>
+<body class="bg-black text-white antialiased overflow-x-hidden">
+
+  <nav class="fixed top-0 w-full flex justify-between items-center px-10 py-4 glass border-b border-cyan-500/10 z-50" style="z-index: 11;">
+    <a href="/" class="text-2xl font-bold tracking-wide text-cyan-300">atlantis [CODEX]</a>
+    <ul class="flex space-x-8 text-sm">
+      <li><a href="#" class="hover:text-cyan-400 transition">Home</a></li>
+      <li><a href="/kdmap.html" class="hover:text-cyan-400 transition">Frontier</a></li>
+      <li><a href="/chat.html" class="hover:text-cyan-400 transition">Chat</a></li>
+      <li><a href="/profile.html" class="hover:text-cyan-400 transition">Profile</a></li>
+    </ul>
+  </nav>
+  <!-- Funder Dashboard -->
+  <section id="funder-dashboard" class="py-20 relative">
+    <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+      <defs><pattern id="grid-fd" width="80" height="80" patternUnits="userSpaceOnUse"><path d="M80 0 L0 0 0 80" class="stroke-line" /></pattern></defs>
+      <rect width="100%" height="100%" fill="url(#grid-fd)" />
+    </svg>
+    <div class="text-center mb-12 relative z-10">
+      <h2 class="text-4xl font-bold text-cyan-200">Funder Dashboard</h2>
+      <p class="text-cyan-100/80">Manage grants, track budgets, and oversee project funding</p>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 max-w-7xl mx-auto relative z-10">
+      <!-- Panel Template -->
+      <template id="funder-panel-template">
+        <div class="glass p-8 rounded-2xl h-72 relative holo-glow scanlines transform-gpu hover:scale-105 transition-all duration-300" style="border: 0.5px solid rgba(0,255,255,0.2)">
+          <div class="relative h-full flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+              <i class="fas fa-gem text-4xl text-cyan-300"></i>
+              <span class="text-sm uppercase text-cyan-200 tracking-widest">Label</span>
+            </div>
+            <div class="text-center text-3xl font-bold text-cyan-100">Value</div>
+          </div>
+        </div>
+      </template>
+      <script>
+        const fdContainer = document.querySelector('#funder-dashboard .grid');
+        const iconsFD = ['fa-handshake','fa-coins','fa-calendar-check','fa-tasks','fa-chart-pie','fa-user-check'];
+        const labelsFD = ['Active Projects','Active Grants','Pending Applications','Upcoming Milestones','Grantable Funds','Completed Grants'];
+        const valuesFD = ['42','$1.2M','18','5 reviews','74%','23'];
+        // --- Funder Dashboard Panels ---
+        // We'll fetch grants and update the value for 'Active Grants' (index 1), 'Active Projects' (index 0), and 'Pending Applications' (index 2)
+        let grantsCache = [];
+        let activeProjects = [];
+        let completedProjects = [];
+        let fundingAllocation = 0;
+        // Helper: fetch all accepted projects for this funder (across all grants)
+        async function fetchAcceptedProjectsAndGrants() {
+          const token = localStorage.getItem('access_token') || '';
+          const grantsResp = await fetch('/grants', { headers: { 'Authorization': 'Bearer ' + token } });
+          if (!grantsResp.ok) return {grants: [], acceptedProjects: []};
+          const grants = await grantsResp.json();
+          let acceptedProjects = [];
+          for (const grant of grants) {
+            const appsResp = await fetch(`/grants/${grant.id}/applicants`, { headers: { 'Authorization': 'Bearer ' + token } });
+            if (!appsResp.ok) continue;
+            const apps = await appsResp.json();
+            apps.forEach(app => {
+              if (app.status === 'shortlisted' || app.status === 'awarded') {
+                acceptedProjects.push({
+                  ...app,
+                  grant,
+                });
+              }
+            });
+          }
+          return {grants, acceptedProjects};
+        }
+        // Helper: check if all steps in all protocol versions of a project are done
+        async function isProjectFullyCompleted(projectId) {
+          const token = localStorage.getItem('access_token') || '';
+          // Get experiment for project
+          const expResp = await fetch(`/projects/${projectId}/experiment`, { headers: { 'Authorization': 'Bearer ' + token } });
+          if (!expResp.ok) return false;
+          const exp = await expResp.json();
+          // Get all protocol versions
+          const versionsResp = await fetch(`/experiments/${exp.id}/versions`, { headers: { 'Authorization': 'Bearer ' + token } });
+          if (!versionsResp.ok) return false;
+          const versions = await versionsResp.json();
+          if (!Array.isArray(versions) || versions.length === 0) return false;
+          for (const version of versions) {
+            const stepsResp = await fetch(`/versions/${version.id}/steps`, { headers: { 'Authorization': 'Bearer ' + token } });
+            if (!stepsResp.ok) return false;
+            const steps = await stepsResp.json();
+            if (!Array.isArray(steps) || steps.length === 0) return false;
+            if (steps.some(step => !step.done)) return false;
+          }
+          return true;
+        }
+        // Update Completed Grants panel (index 5)
+        async function updateCompletedGrantsPanel() {
+          const {grants, acceptedProjects} = await fetchAcceptedProjectsAndGrants();
+          completedProjects = [];
+          for (const app of acceptedProjects) {
+            if (await isProjectFullyCompleted(app.project_id)) {
+              completedProjects.push(app);
+            }
+          }
+          valuesFD[5] = completedProjects.length.toString();
+          // Update the dashboard panel value in the DOM
+          const panels = document.querySelectorAll('#funder-dashboard .grid .glass');
+          if (panels[5]) {
+            panels[5].querySelector('.text-center').textContent = valuesFD[5];
+            // Attach click handler to show modal
+            panels[5].style.cursor = 'pointer';
+            panels[5].onclick = function(e) {
+              e.preventDefault();
+              showCompletedGrantsModal(completedProjects);
+            };
+          }
+        }
+        function showCompletedGrantsModal(projects) {
+          let modal = document.getElementById('completed-grants-modal');
+          if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'completed-grants-modal';
+            modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60';
+            document.body.appendChild(modal);
+          }
+          let html = `<div class='bg-gray-900 rounded-2xl p-8 w-full max-w-2xl glass relative'>` +
+            `<button class='absolute top-4 right-4 text-cyan-300 text-2xl' onclick='document.getElementById("completed-grants-modal").classList.add("hidden")'>&times;</button>` +
+            `<h3 class='text-2xl font-bold text-cyan-200 mb-4'>Completed Projects (${projects.length})</h3>` +
+            `<div class='flex flex-col gap-4 max-h-96 overflow-y-auto'>` +
+            (projects.length === 0 ? `<div class='text-cyan-100'>No completed projects found.</div>` :
+              projects.map(p => `
+                <div class='p-4 rounded bg-gray-800 border border-cyan-400/10'>
+                  <div class='text-cyan-100 font-semibold text-lg'>${p.project_title || 'Untitled Project'}</div>
+                  <div class='text-cyan-200 text-sm mb-1'>Grant: ${p.grant.title || ''}</div>
+                  <div class='text-cyan-400 text-xs'>Ask: $${p.ask_amount || '0'}</div>
+                  <div class='text-cyan-300 text-xs'>Status: ${p.status}</div>
+                </div>
+              `).join('')) +
+            `</div></div>`;
+          modal.innerHTML = html;
+          modal.classList.remove('hidden');
+        }
+        // Update Funding Allocation panel (index 4)
+        async function updateFundingAllocationPanel() {
+          const {grants, acceptedProjects} = await fetchAcceptedProjectsAndGrants();
+          let totalGrantValue = grants.reduce((sum, g) => sum + (parseFloat(g.total_funding_usd) || 0), 0);
+          // Fetch total_budget for each accepted project from the backend
+          let totalBudgets = 0;
+          for (const p of acceptedProjects) {
+            try {
+              const resp = await fetch(`/projects/${p.project_id}`, {
+                headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('access_token') || '') }
+              });
+              if (resp.ok) {
+                const project = await resp.json();
+                totalBudgets += parseFloat(project.budget_requested) || 0;
+              }
+            } catch (e) { /* ignore errors, treat as 0 */ }
+          }
+          console.log('Total Grant Value:', totalGrantValue, 'Total Budgets:', totalBudgets);
+          fundingAllocation = Math.max(0, totalGrantValue - totalBudgets);
+          valuesFD[4] = '$' + fundingAllocation.toLocaleString(undefined, {maximumFractionDigits:2});
+          // Update the dashboard panel value in the DOM
+          const panels = document.querySelectorAll('#funder-dashboard .grid .glass');
+          if (panels[4]) {
+            panels[4].querySelector('.text-center').textContent = valuesFD[4];
+            // Attach click handler to show active projects modal
+            panels[4].style.cursor = 'pointer';
+            panels[4].onclick = function(e) {
+              e.preventDefault();
+              showActiveProjectsModal(acceptedProjects);
+            };
+          }
+        }
+        // Show modal for active projects (used by Funding Allocation and Active Projects panels)
+        function showActiveProjectsModal(projects) {
+          let modal = document.getElementById('active-projects-modal');
+          if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'active-projects-modal';
+            modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60';
+            document.body.appendChild(modal);
+          }
+          let html = `<div class='bg-gray-900 rounded-2xl p-8 w-full max-w-2xl glass relative'>` +
+            `<button class='absolute top-4 right-4 text-cyan-300 text-2xl' onclick='document.getElementById("active-projects-modal").classList.add("hidden")'>&times;</button>` +
+            `<h3 class='text-2xl font-bold text-cyan-200 mb-4'>Active Projects (${projects.length})</h3>` +
+            `<div class='flex flex-col gap-4 max-h-96 overflow-y-auto'>` +
+            (projects.length === 0 ? `<div class='text-cyan-100'>No active projects found.</div>` :
+              projects.map(p => `
+                <div class='p-4 rounded bg-gray-800 border border-cyan-400/10'>
+                  <div class='text-cyan-100 font-semibold text-lg'>${p.project_title || 'Untitled Project'}</div>
+                  <div class='text-cyan-200 text-sm mb-1'>Grant: ${p.grant.title || ''}</div>
+                  <div class='text-cyan-400 text-xs'>Ask: $${p.ask_amount || '0'}</div>
+                  <div class='text-cyan-300 text-xs'>Status: ${p.status}</div>
+                </div>
+              `).join('')) +
+            `</div></div>`;
+          modal.innerHTML = html;
+          modal.classList.remove('hidden');
+        }
+        async function fetchAndShowGrantsModal() {
+          try {
+            const resp = await fetch('/grants', {
+              headers: {
+                'Authorization': 'Bearer ' + (localStorage.getItem('access_token') || '')
+              }
+            });
+            if (resp.ok) {
+              const grants = await resp.json();
+              grantsCache = grants;
+              // Update the value for 'Active Grants' panel (index 1)
+              valuesFD[1] = grants.length.toString();
+              // Update the dashboard panel value in the DOM
+              const panels = document.querySelectorAll('#funder-dashboard .grid .glass');
+              if (panels[1]) {
+                panels[1].querySelector('.text-center').textContent = valuesFD[1];
+              }
+              showGrantsModal(grants);
+            } else {
+              alert('Could not fetch grants.');
+            }
+          } catch (e) {
+            alert('Network error fetching grants.');
+          }
+        }
+        function showGrantsModal(grants) {
+          let modal = document.getElementById('all-grants-modal');
+          if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'all-grants-modal';
+            modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60';
+            document.body.appendChild(modal);
+          }
+          let html = `<div class='bg-gray-900 rounded-2xl p-8 w-full max-w-2xl glass relative'>` +
+            `<button class='absolute top-4 right-4 text-cyan-300 text-2xl' onclick='document.getElementById("all-grants-modal").classList.add("hidden")'>&times;</button>` +
+            `<h3 class='text-2xl font-bold text-cyan-200 mb-4'>All Grants (${grants.length})</h3>` +
+            `<div class='flex flex-col gap-4 max-h-96 overflow-y-auto mb-6'>` +
+            (grants.length === 0 ? `<div class='text-cyan-100'>No grants found.</div>` :
+              grants.map(g => `
+                <div class='p-4 rounded bg-gray-800 border border-cyan-400/10 mb-2'>
+                  <div class='text-cyan-100 font-semibold text-lg'>${g.title}</div>
+                  <div class='text-cyan-200 text-sm mb-1'>${g.description || ''}</div>
+                  <div class='text-cyan-400 text-xs'>Funding: $${g.total_funding_usd || '0'}</div>
+                  <div class='text-cyan-300 text-xs'>Created: ${g.created_at ? new Date(g.created_at).toLocaleDateString() : ''}</div>
+                </div>
+              `).join('')) +
+            `</div>` +
+            `<div class='flex justify-end'>
+              <button class='px-4 py-2 glass holo-glow rounded border border-cyan-400/30 hover:border-cyan-300 transition text-cyan-200 text-xs font-semibold' onclick='window.location.href="/grant-management.html"'>Go to Grant Management</button>
+            </div>` +
+            `</div>`;
+          modal.innerHTML = html;
+          modal.classList.remove('hidden');
+        }
+        async function updateActiveProjectsPanel() {
+          const token = localStorage.getItem('access_token') || '';
+          // Fetch all grants for this funder
+          const grantsResp = await fetch('/grants', { headers: { 'Authorization': 'Bearer ' + token } });
+          if (!grantsResp.ok) return;
+          const grants = await grantsResp.json();
+          const funderGrantIds = grants.map(g => g.id);
+          // Fetch all applications for these grants
+          let allAcceptedProjects = new Set();
+          for (const grantId of funderGrantIds) {
+            const appsResp = await fetch(`/grants/${grantId}/applicants`, { headers: { 'Authorization': 'Bearer ' + token } });
+            if (!appsResp.ok) continue;
+            const apps = await appsResp.json();
+            apps.forEach(app => {
+              if (app.status === 'shortlisted' || app.status === 'awarded') {
+                allAcceptedProjects.add(app.project_id);
+              }
+            });
+          }
+          activeProjects = Array.from(allAcceptedProjects);
+          valuesFD[0] = activeProjects.length.toString();
+          // Update the dashboard panel value in the DOM
+          const panels = document.querySelectorAll('#funder-dashboard .grid .glass');
+          if (panels[0]) {
+            panels[0].querySelector('.text-center').textContent = valuesFD[0];
+          }
+        }
+        async function updatePendingApplicationsPanel() {
+          const token = localStorage.getItem('access_token') || '';
+          // Fetch all grants for this funder
+          const grantsResp = await fetch('/grants', { headers: { 'Authorization': 'Bearer ' + token } });
+          if (!grantsResp.ok) return;
+          const grants = await grantsResp.json();
+          const funderGrantIds = grants.map(g => g.id);
+          // Fetch all applications for these grants and count pending
+          let pendingCount = 0;
+          for (const grantId of funderGrantIds) {
+            const appsResp = await fetch(`/grants/${grantId}/applicants`, { headers: { 'Authorization': 'Bearer ' + token } });
+            if (!appsResp.ok) continue;
+            const apps = await appsResp.json();
+            pendingCount += apps.filter(app => app.status === 'pending').length;
+          }
+          valuesFD[2] = pendingCount.toString();
+          // Update the dashboard panel value in the DOM
+          const panels = document.querySelectorAll('#funder-dashboard .grid .glass');
+          if (panels[2]) {
+            panels[2].querySelector('.text-center').textContent = valuesFD[2];
+          }
+        }
+        async function updateUpcomingMilestonesPanel() {
+          const token = localStorage.getItem('access_token') || '';
+          // Fetch all grants for this funder
+          const grantsResp = await fetch('/grants', { headers: { 'Authorization': 'Bearer ' + token } });
+          if (!grantsResp.ok) return;
+          const grants = await grantsResp.json();
+          const funderGrantIds = grants.map(g => g.id);
+          // Find all funded projects (shortlisted/awarded)
+          let fundedProjectIds = new Set();
+          for (const grantId of funderGrantIds) {
+            const appsResp = await fetch(`/grants/${grantId}/applicants`, { headers: { 'Authorization': 'Bearer ' + token } });
+            if (!appsResp.ok) continue;
+            const apps = await appsResp.json();
+            apps.forEach(app => {
+              if (app.status === 'shortlisted' || app.status === 'awarded') {
+                fundedProjectIds.add(app.project_id);
+              }
+            });
+          }
+          // For each funded project, get experiment, latest protocol version, and steps
+          let upcomingSteps = [];
+          const now = new Date();
+          const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+          for (const projectId of fundedProjectIds) {
+            // Get experiment for project
+            const expResp = await fetch(`/projects/${projectId}/experiment`, { headers: { 'Authorization': 'Bearer ' + token } });
+            if (!expResp.ok) continue;
+            const exp = await expResp.json();
+            // Get latest protocol version
+            const versionsResp = await fetch(`/experiments/${exp.id}/versions`, { headers: { 'Authorization': 'Bearer ' + token } });
+            if (!versionsResp.ok) continue;
+            const versions = await versionsResp.json();
+            if (!Array.isArray(versions) || versions.length === 0) continue;
+            const latest = versions.reduce((a, b) => new Date(a.created_at) > new Date(b.created_at) ? a : b);
+            // Get steps for latest version
+            const stepsResp = await fetch(`/versions/${latest.id}/steps`, { headers: { 'Authorization': 'Bearer ' + token } });
+            if (!stepsResp.ok) continue;
+            const steps = await stepsResp.json();
+            // Filter steps due within next week
+            steps.forEach(step => {
+              if (step.due_date) {
+                const due = new Date(step.due_date);
+                if (due >= now && due <= weekFromNow && !step.done) {
+                  upcomingSteps.push({
+                    ...step,
+                    projectId,
+                    experimentTitle: exp.title || 'Untitled Experiment',
+                    grantId: funderGrantIds.find(gid => gid === latest.grant_id) || null
+                  });
+                }
+              }
+            });
+          }
+          valuesFD[3] = upcomingSteps.length + ' due';
+          // Update the dashboard panel value in the DOM
+          const panels = document.querySelectorAll('#funder-dashboard .grid .glass');
+          if (panels[3]) {
+            panels[3].querySelector('.text-center').textContent = valuesFD[3];
+            // Attach click handler to show modal
+            panels[3].style.cursor = 'pointer';
+            panels[3].onclick = function(e) {
+              e.preventDefault();
+              showUpcomingMilestonesModal(upcomingSteps);
+            };
+          }
+        }
+        function showUpcomingMilestonesModal(steps) {
+          let modal = document.getElementById('milestones-modal');
+          if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'milestones-modal';
+            modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60';
+            document.body.appendChild(modal);
+          }
+          let html = `<div class='bg-gray-900 rounded-2xl p-8 w-full max-w-2xl glass relative'>` +
+            `<button class='absolute top-4 right-4 text-cyan-300 text-2xl' onclick='document.getElementById("milestones-modal").classList.add("hidden")'>&times;</button>` +
+            `<h3 class='text-2xl font-bold text-cyan-200 mb-4'>Upcoming Milestones (Next 7 Days)</h3>` +
+            `<div class='flex flex-col gap-4 max-h-96 overflow-y-auto'>` +
+            (steps.length === 0 ? `<div class='text-cyan-100'>No steps due in the next week.</div>` :
+              steps.map(s => `
+                <div class='p-4 rounded bg-gray-800 border border-cyan-400/10 cursor-pointer hover:bg-cyan-950 transition' onclick='window.location.href="grant-progress.html?funder=me#${s.projectId}"'>
+                  <div class='text-cyan-100 font-semibold text-lg'>${s.title || 'Untitled Step'}</div>
+                  <div class='text-cyan-200 text-sm mb-1'>Experiment: ${s.experimentTitle}</div>
+                  <div class='text-cyan-400 text-xs'>Due: ${s.due_date ? new Date(s.due_date).toLocaleString() : 'N/A'}</div>
+                </div>
+              `).join('')) +
+            `</div></div>`;
+          modal.innerHTML = html;
+          modal.classList.remove('hidden');
+        }
+        // Render panels and attach click handler for 'Budget Remaining' and 'Active Projects'
+        iconsFD.forEach((icon, i) => {
+          const tmpl = document.getElementById('funder-panel-template');
+          if (!tmpl) return;
+          const node = document.importNode(tmpl.content, true);
+          node.querySelector('i').classList.replace('fa-gem', icon);
+          node.querySelector('span').textContent = labelsFD[i];
+          node.querySelector('.text-center').textContent = valuesFD[i];
+          // Attach modal handler to 'Active Grants' panel (index 1)
+          if (i === 1) {
+            node.querySelector('.glass').style.cursor = 'pointer';
+            node.querySelector('.glass').addEventListener('click', (e) => {
+              e.preventDefault();
+              fetchAndShowGrantsModal();
+            });
+          }
+          // Attach navigation to 'Pending Applications' panel (index 2)
+          if (i === 2) {
+            node.querySelector('.glass').style.cursor = 'pointer';
+            node.querySelector('.glass').addEventListener('click', (e) => {
+              e.preventDefault();
+              window.location.href = 'grant-selection.html';
+            });
+          }
+          // Attach navigation to 'Active Projects' panel (index 0)
+          if (i === 0) {
+            node.querySelector('.glass').style.cursor = 'pointer';
+            node.querySelector('.glass').addEventListener('click', async (e) => {
+              e.preventDefault();
+              const {acceptedProjects} = await fetchAcceptedProjectsAndGrants();
+              showActiveProjectsModal(acceptedProjects);
+            });
+          }
+          // Attach completed grants modal to panel 5
+          if (i === 5) {
+            node.querySelector('.glass').style.cursor = 'pointer';
+            node.querySelector('.glass').addEventListener('click', async (e) => {
+              e.preventDefault();
+              await updateCompletedGrantsPanel();
+            });
+          }
+          // Attach funding allocation modal to panel 4
+          if (i === 4) {
+            node.querySelector('.glass').style.cursor = 'pointer';
+            node.querySelector('.glass').addEventListener('click', async (e) => {
+              e.preventDefault();
+              const {acceptedProjects} = await fetchAcceptedProjectsAndGrants();
+              showActiveProjectsModal(acceptedProjects);
+            });
+          }
+          fdContainer.appendChild(node);
+        });
+      </script>
+      <!-- Grant Modal -->
+      <div id="grant-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 hidden">
+        <div class="bg-gray-900 rounded-2xl p-8 w-full max-w-lg glass relative">
+          <button class="absolute top-4 right-4 text-cyan-300 text-2xl" onclick="document.getElementById('grant-modal').classList.add('hidden')">&times;</button>
+          <h3 class="text-2xl font-bold text-cyan-200 mb-4">Create New Grant</h3>
+          <form id="grant-form" class="flex flex-col gap-4">
+            <input type="text" name="title" placeholder="Grant Title" class="p-2 rounded bg-gray-800 border border-cyan-400/20 text-cyan-100" required />
+            <textarea name="description" placeholder="Description" class="p-2 rounded bg-gray-800 border border-cyan-400/20 text-cyan-100" required></textarea>
+            <input type="number" name="total_funding_usd" placeholder="Total Funding (USD)" class="p-2 rounded bg-gray-800 border border-cyan-400/20 text-cyan-100" required />
+            <div id="questions-section" class="flex flex-col gap-2">
+              <label class="text-cyan-200 font-semibold">Application Questions</label>
+              <div id="questions-list" class="flex flex-col gap-2"></div>
+              <div class="flex gap-2">
+                <input type="text" id="new-question-input" placeholder="Add a question..." class="flex-1 p-2 rounded bg-gray-800 border border-cyan-400/20 text-cyan-100" />
+                <button type="button" id="add-question-btn" class="px-3 py-2 rounded bg-cyan-700 text-cyan-100 hover:bg-cyan-600">Add</button>
+              </div>
+            </div>
+            <button type="submit" class="mt-2 px-4 py-2 glass holo-glow rounded border border-cyan-400/30 hover:border-cyan-300 transition text-cyan-200 text-base font-semibold">Create Grant</button>
+          </form>
+        </div>
+      </div>
+      <script>
+        // Application Questions logic
+        const questions = [];
+        const questionsList = document.getElementById('questions-list');
+        const newQuestionInput = document.getElementById('new-question-input');
+        const addQuestionBtn = document.getElementById('add-question-btn');
+        function renderQuestions() {
+          questionsList.innerHTML = '';
+          questions.forEach((q, idx) => {
+            const div = document.createElement('div');
+            div.className = 'flex items-center gap-2';
+            div.innerHTML = `<span class='flex-1 text-cyan-100'>${q}</span><button type='button' class='text-red-400 hover:text-red-600' data-idx='${idx}' title='Remove'>&times;</button>`;
+            div.querySelector('button').onclick = function() {
+              questions.splice(idx, 1);
+              renderQuestions();
+            };
+            questionsList.appendChild(div);
+          });
+        }
+        addQuestionBtn.onclick = function() {
+          const val = newQuestionInput.value.trim();
+          if (val) {
+            questions.push(val);
+            newQuestionInput.value = '';
+            renderQuestions();
+          }
+        };
+        // Optional: Enter key adds question
+        newQuestionInput.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            addQuestionBtn.click();
+          }
+        });
+        // Handle form submission
+        document.getElementById('grant-form').addEventListener('submit', async function(e) {
+          e.preventDefault();
+          const form = e.target;
+          const data = {
+            title: form.title.value,
+            description: form.description.value,
+            total_funding_usd: form.total_funding_usd.value,
+            application_questions: questions
+          };
+          try {
+            const resp = await fetch('/grants', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + (localStorage.getItem('access_token') || '')
+              },
+              body: JSON.stringify(data)
+            });
+            if (resp.ok) {
+              document.getElementById('grant-modal').classList.add('hidden');
+              alert('Grant created!');
+              // Optionally, refresh dashboard or grant list here
+            } else {
+              const err = await resp.json();
+              alert('Error creating grant: ' + (err.msg || resp.statusText));
+            }
+          } catch (err) {
+            alert('Network error: ' + err.message);
+          }
+        });
+      </script>
+  </section>
+
+
+    <div class="h-32"></div>
+
+  <!-- Global Discovery Feed -->
+  <section id="global-discovery-feed" class="py-20 px-8 mx-auto relative z-10 max-w-6xl">
+    <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg" style="z-index: -1;">
+      <defs>
+        <pattern id="grid-discovery" width="80" height="80" patternUnits="userSpaceOnUse">
+          <path d="M80 0 L0 0 0 80" class="stroke-line" />
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#grid-discovery)" />
+    </svg>
+    <h2 class="text-3xl font-bold text-cyan-200 mb-6">Global Discovery Feed</h2>
+    <p class="text-cyan-100/80 mb-8">AI-curated experiments in your area and suggested collaborators.</p>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="discovery-feed-list">
+      <!-- Feed items will be injected here -->
+    </div>
+  </section>
+  <script>
+    // --- Global Discovery Feed Logic (API-connected & Personalized) ---
+    async function renderDiscoveryFeed() {
+      const list = document.getElementById('discovery-feed-list');
+      list.innerHTML = '<div class="text-cyan-200 text-center col-span-2">Loading personalized feed...</div>';
+      const token = localStorage.getItem('access_token');
+      if (!token) return;
+      // Fetch user profile for personalization
+      let userProfile = null;
+      try {
+        const userId = (function parseJwt(token) { try { return JSON.parse(atob(token.split('.')[1])).sub; } catch (e) { return null; } })(token);
+        if (userId) {
+          const profRes = await fetch(`/profiles/${userId}`, { headers: { 'Authorization': 'Bearer ' + token } });
+          if (profRes.ok) userProfile = await profRes.json();
+        }
+      } catch (e) {}
+      // Fetch all projects (for experiments)
+      let projects = [];
+      try {
+        const res = await fetch('/projects', { headers: { 'Authorization': 'Bearer ' + token } });
+        if (res.ok) projects = await res.json();
+      } catch (e) {}
+      // Fetch all experiments
+      let experiments = [];
+      try {
+        const res = await fetch('/experiments', { headers: { 'Authorization': 'Bearer ' + token } });
+        if (res.ok) experiments = await res.json();
+      } catch (e) {}
+      // Personalization: filter/sort by user expertise/interests if available
+      let tags = (userProfile && userProfile.expertise_tags) ? userProfile.expertise_tags.map(t => t.toLowerCase()) : [];
+      // Join projects and experiments by title/owner_id
+      let feedItems = projects.map(p => {
+        const exp = experiments.find(e => e.title === p.title && e.owner_id === p.owner_id);
+        return {
+          project: p,
+          experiment: exp,
+          score: (p.impact_score || 0) + (p.reproducibility_score || 0) + (p.difficulty_score || 0),
+        };
+      }).filter(item => {
+        if (!item.experiment) return false;
+        if (item.experiment.visibility !== 'public') return false;
+        return true;
+      });
+      // If user has tags, boost/sort by tag match in experiment/project title/desc
+      if (tags.length) {
+        feedItems.forEach(item => {
+          let text = (item.project.title + ' ' + (item.experiment.description || '')).toLowerCase();
+          item.tagScore = tags.reduce((acc, tag) => acc + (text.includes(tag) ? 1 : 0), 0);
+        });
+        feedItems.sort((a, b) => (b.tagScore - a.tagScore) || (b.score - a.score));
+      } else {
+        feedItems.sort((a, b) => (b.score - a.score));
+      }
+      // --- Batch fetch all unique author IDs and resolve names ---
+      const authorIds = Array.from(new Set(feedItems.map(item => (item.experiment && item.experiment.owner_id) || (item.project && item.project.owner_id)).filter(Boolean)));
+      const authorNameMap = {};
+      await Promise.all(authorIds.map(async (authorId) => {
+        try {
+          const res = await fetch(`/users/${authorId}`, { headers: { 'Authorization': 'Bearer ' + token } });
+          if (res.ok) {
+            const user = await res.json();
+            // Defensive: prefer name, fallback to username, fallback to empty string
+            authorNameMap[authorId] = (user.name && user.name.trim()) ? user.name : (user.username || '');
+          } else {
+            authorNameMap[authorId] = '';
+          }
+        } catch (e) {
+          authorNameMap[authorId] = '';
+        }
+      }));
+      // Helper to truncate and expand text
+      function createExpandableText(text, maxLen, className) {
+        if (!text || text.length <= maxLen) {
+          return `<span class="${className}">${text || ''}</span>`;
+        }
+        const short = text.slice(0, maxLen) + '...';
+        const id = 'exp-' + Math.random().toString(36).substr(2, 8);
+        return `
+          <span class="${className}" id="${id}-short">${short} <a href="#" class="text-cyan-300 underline" onclick="document.getElementById('${id}-short').style.display='none';document.getElementById('${id}-full').style.display='inline';return false;">Show more</a></span>
+          <span class="${className}" id="${id}-full" style="display:none;">${text} <a href="#" class="text-cyan-300 underline" onclick="document.getElementById('${id}-full').style.display='none';document.getElementById('${id}-short').style.display='inline';return false;">Show less</a></span>
+        `;
+      }
+      list.innerHTML = '';
+      if (!feedItems.length) {
+        list.innerHTML = '<div class="text-cyan-200 text-center col-span-2">No experiments found for your feed.</div>';
+        return;
+      }
+      for (const item of feedItems.slice(0, 12)) {
+        const div = document.createElement('div');
+        div.className = "glass rounded-2xl p-6 holo-glow scanlines flex flex-col gap-2";
+        // Get authorId (experiment owner)
+        let authorId = item.experiment && item.experiment.owner_id ? item.experiment.owner_id : (item.project ? item.project.owner_id : null);
+        // Get author name from authorNameMap (prefer 'name', fallback to previous logic)
+        let authorName = authorNameMap[authorId] || authorId || 'Unknown';
+        // Truncate description
+        const descHtml = createExpandableText(item.experiment && item.experiment.description ? item.experiment.description : '', 120, 'text-cyan-200 text-sm mb-1');
+        div.innerHTML = `
+          <div class="flex items-center gap-2 mb-1">
+            <span class="inline-block w-2 h-2 rounded-full mr-2" style="background:#4caf50"></span>
+            <span class="text-cyan-100 font-semibold text-lg">${item.project.title}</span>
+          </div>
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-cyan-300 text-xs">by</span>
+            <span class="font-semibold text-cyan-200 text-xs author-name">${authorName}</span>
+          </div>
+          <div>${descHtml}</div>
+          <div class="flex flex-wrap gap-2 text-xs mb-1">
+            ${(item.project.field ? `<span class='bg-cyan-900 px-2 py-1 rounded'>${item.project.field}</span>` : '')}
+          </div>
+          <div class="text-cyan-400 text-xs mb-1">Impact: <span class="font-bold">${item.project.impact_score !== null && item.project.impact_score !== undefined ? Number(item.project.impact_score).toFixed(2) : 'N/A'}</span> | Reproducibility: <span class="font-bold">${item.project.reproducibility_score !== null && item.project.reproducibility_score !== undefined ? Number(item.project.reproducibility_score).toFixed(2) : 'N/A'}</span> | Difficulty: <span class="font-bold">${item.project.difficulty_score !== null && item.project.difficulty_score !== undefined ? Number(item.project.difficulty_score).toFixed(2) : 'N/A'}</span></div>
+          <button class="mt-2 px-4 py-2 glass holo-glow rounded border border-cyan-400/30 hover:border-cyan-300 transition text-cyan-200 text-sm" onclick="window.location.href='experiment.html?project_id=${item.project.id}'">View Experiment</button>
+        `;
+        list.appendChild(div);
+      }
+    }
+    renderDiscoveryFeed();
+  </script>
+
+
+  <footer class="py-8 text-center glass mt-16 relative z-10 border-t border-cyan-500/10">
+    <p class="text-sm text-cyan-200">&copy; 2025 Atlantis. All rights reserved.</p>
+  </footer>
+
+  <script>
+    // On page load, fetch grants and update the Active Grants panel value
+    window.addEventListener('DOMContentLoaded', () => {
+      fetch('/grants', {
+        headers: {
+          'Authorization': 'Bearer ' + (localStorage.getItem('access_token') || '')
+        }
+      })
+        .then(resp => resp.ok ? resp.json() : [])
+        .then(grants => {
+          if (Array.isArray(grants)) {
+            valuesFD[1] = grants.length.toString();
+            // Update the dashboard panel value in the DOM
+            const panels = document.querySelectorAll('#funder-dashboard .grid .glass');
+            if (panels[1]) {
+              panels[1].querySelector('.text-center').textContent = valuesFD[1];
+            }
+          }
+        });
+      updateActiveProjectsPanel();
+      updatePendingApplicationsPanel();
+      updateUpcomingMilestonesPanel();
+      updateCompletedGrantsPanel();
+      updateFundingAllocationPanel();
+    });
+  </script>
+
+</body>
+
+</html>

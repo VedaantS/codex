@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register | Atlantis [CODEX]</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+  <script src="https://kit.fontawesome.com/dac0a9835a.js" crossorigin="anonymous"></script>
+  <style>
+    body { font-family: 'Space Grotesk', sans-serif; }
+    .glass { backdrop-filter: blur(14px) saturate(180%); background: rgba(10, 10, 30, 0.06); }
+    .holo-glow { box-shadow: 0 0 0.5px rgba(0,255,255,0.6), 0 0 8px rgba(0,255,255,0.2), 0 0 40px rgba(0,255,255,0.05); transition: box-shadow 0.4s ease-in-out; }
+    .holo-glow:hover { box-shadow: 0 0 1px rgba(0,255,255,0.9), 0 0 12px rgba(0,255,255,0.4), 0 0 60px rgba(0,255,255,0.1); }
+    .scanlines::before { content: ""; position: absolute; inset: 0;
+      background-image: repeating-linear-gradient(to bottom, rgba(255,255,255,0.02) 0px, transparent 1px, transparent 4px);
+      pointer-events: none; z-index: 10;
+    }
+  </style>
+</head>
+<body class="bg-black text-white antialiased min-h-screen flex items-center justify-center">
+  <nav class="fixed top-0 w-full flex justify-between items-center px-10 py-4 glass border-b border-cyan-500/10 z-50" style="z-index: 11;">
+    <a href="/" class="text-2xl font-bold tracking-wide text-cyan-300">atlantis [CODEX]</a>
+    <ul class="flex space-x-8 text-sm">
+      <li><a href="#" class="hover:text-cyan-400 transition">Home</a></li>
+      <li><a href="/kdmap.html" class="hover:text-cyan-400 transition">Frontier</a></li>
+      <li><a href="/chat.html" class="hover:text-cyan-400 transition">Chat</a></li>
+      <li><a href="/profile.html" class="hover:text-cyan-400 transition">Profile</a></li>
+    </ul>
+  </nav>
+  <div class="w-full flex justify-center items-center min-h-screen">
+    <div class="glass rounded-2xl p-8 holo-glow scanlines max-w-md mx-auto my-12 relative z-10 mt-32">
+      <h2 class="text-2xl font-bold text-cyan-200 mb-6 text-center">Register</h2>
+      <form id="registerForm" class="flex flex-col gap-4">
+        <input type="text" id="name" placeholder="Name" required class="p-3 rounded bg-black/40 border border-cyan-400/20 text-cyan-100 focus:outline-none focus:border-cyan-300" />
+        <input type="email" id="email" placeholder="Email" required class="p-3 rounded bg-black/40 border border-cyan-400/20 text-cyan-100 focus:outline-none focus:border-cyan-300" />
+        <input type="password" id="password" placeholder="Password" required class="p-3 rounded bg-black/40 border border-cyan-400/20 text-cyan-100 focus:outline-none focus:border-cyan-300" />
+        <select id="role" required class="p-3 rounded bg-black/40 border border-cyan-400/20 text-cyan-100 focus:outline-none focus:border-cyan-300">
+          <option value="scientist">Scientist</option>
+          <option value="funder">Funder</option>
+        </select>
+        <button type="submit" class="px-6 py-3 glass holo-glow rounded-lg border border-cyan-400/30 hover:border-cyan-300 transition font-semibold text-cyan-200">Register</button>
+      </form>
+      <div id="registerError" class="text-red-400 mt-4 text-center"></div>
+      <div class="mt-4 text-center text-cyan-100/80 text-sm">Already have an account? <a href="/login" class="text-cyan-300 hover:underline">Login</a></div>
+    </div>
+  </div>
+  <script>
+    document.getElementById('registerForm').onsubmit = async function(e) {
+      e.preventDefault();
+      const name = document.getElementById('name').value;
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const role = document.getElementById('role').value;
+      const res = await fetch('/auth/register', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({name, email, password, role})
+      });
+      if (res.ok) {
+        window.location.href = '/login';
+      } else {
+        const err = await res.text();
+        document.getElementById('registerError').innerText = err;
+      }
+    };
+  </script>
+</body>
+</html>

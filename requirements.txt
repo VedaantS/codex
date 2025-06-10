@@ -1,0 +1,11 @@
+Flask
+Flask-SQLAlchemy
+Flask-Migrate
+Flask-JWT-Extended
+Flask-Cors
+psycopg2-binary
+boto3
+Werkzeug
+openai>=1.0.0
+python-docx>=0.8.11
+PyPDF2>=3.0.0

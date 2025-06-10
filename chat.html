@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Global Chat | Atlantis [CODEX]</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+  <script src="https://kit.fontawesome.com/dac0a9835a.js" crossorigin="anonymous"></script>
+  <style>
+    body { font-family: 'Space Grotesk', sans-serif; }
+    .glass { backdrop-filter: blur(14px) saturate(180%); background: rgba(10, 10, 30, 0.06); }
+    .holo-glow { box-shadow: 0 0 0.5px rgba(0,255,255,0.6), 0 0 8px rgba(0,255,255,0.2), 0 0 40px rgba(0,255,255,0.05); transition: box-shadow 0.4s ease-in-out; }
+    .holo-glow:hover { box-shadow: 0 0 1px rgba(0,255,255,0.9), 0 0 12px rgba(0,255,255,0.4), 0 0 60px rgba(0,255,255,0.1); }
+    .scanlines::before { content: ""; position: absolute; inset: 0;
+      background-image: repeating-linear-gradient(to bottom, rgba(255,255,255,0.02) 0px, transparent 1px, transparent 4px);
+      pointer-events: none; z-index: 10;
+    }
+  </style>
+</head>
+<body class="bg-black text-white antialiased min-h-screen flex flex-col">
+  <div class="flex flex-1 h-100vh">
+    <!-- Sidebar: Existing Chats -->
+    <aside class="w-80 bg-black/70 border-r border-cyan-900/40 flex flex-col p-6 gap-4">
+      <h3 class="text-xl font-bold text-cyan-200 mb-2">Chats</h3>
+      <div id="existingChats" class="flex-1 overflow-y-auto flex flex-col gap-2"></div>
+      <div class="mt-6">
+        <button id="startNewChatBtn" class="w-full py-2 rounded glass holo-glow border border-cyan-400/30 hover:border-cyan-300 transition text-cyan-200">+ Start New Chat</button>
+      </div>
+    </aside>
+    <!-- Main Chat Area -->
+    <main class="flex-1 flex flex-col items-stretch justify-stretch">
+      <!-- New Chat Search -->
+      <div id="newChatSection" class="hidden flex flex-col items-center justify-center h-full p-12">
+        <div class="w-full max-w-xl">
+          <label class="block text-cyan-200 mb-2">Start a chat with any user:</label>
+          <input id="userSearch" type="text" placeholder="Search by name or email..." class="w-full p-3 rounded bg-black/40 border border-cyan-400/20 text-cyan-100 focus:outline-none focus:border-cyan-300" />
+          <div id="userResults" class="mt-2"></div>
+        </div>
+      </div>
+      <!-- Chat Window -->
+      <div id="chatWindow" class="hidden flex flex-col h-full p-12">
+        <div class="flex items-center gap-3 mb-6">
+          <div id="chatAvatar" class="w-14 h-14 rounded-full bg-cyan-900 flex items-center justify-center text-2xl font-bold text-cyan-200"></div>
+          <div>
+            <div id="chatName" class="font-semibold text-cyan-200 text-xl"></div>
+            <div id="chatEmail" class="text-cyan-300 text-sm"></div>
+          </div>
+        </div>
+        <div id="messages" class="flex-1 overflow-y-auto bg-black/30 rounded-lg p-6 mb-4" style="min-height:300px;"></div>
+        <form id="chatForm" class="flex gap-2">
+          <input id="chatInput" type="text" autocomplete="off" placeholder="Type a message..." class="flex-1 p-4 rounded glass border border-cyan-400/20 text-cyan-100 bg-transparent focus:outline-none" />
+          <button type="submit" class="px-6 py-3 rounded glass holo-glow border border-cyan-400/30 hover:border-cyan-300 transition text-cyan-200">Send</button>
+        </form>
+      </div>
+    </main>
+  </div>
+  <script>
+    function parseJwt(token) {
+      try { return JSON.parse(atob(token.split('.')[1])); } catch (e) { return {}; }
+    }
+    function logout() {
+      localStorage.removeItem('access_token');
+      window.location.href = '/login';
+    }
+    let currentChatUser = null;
+    let currentUser = null;
+    let chatHistory = [];
+    let allUsers = [];
+    let existingChats = [];
+
+    async function fetchAllUsers() {
+      const token = localStorage.getItem('access_token');
+      if (!token) return [];
+      const res = await fetch('/users', { headers: { 'Authorization': 'Bearer ' + token } });
+      if (!res.ok) return [];
+      return await res.json();
+    }
+    async function fetchExistingChats() {
+      const token = localStorage.getItem('access_token');
+      if (!token) return [];
+      const res = await fetch('/global-chats', { headers: { 'Authorization': 'Bearer ' + token } });
+      if (!res.ok) return [];
+      return await res.json();
+    }
+    function renderExistingChats() {
+      const container = document.getElementById('existingChats');
+      container.innerHTML = '';
+      if (!existingChats.length) {
+        container.innerHTML = '<div class="text-cyan-400">No chats yet.</div>';
+        return;
+      }
+      existingChats.forEach(chat => {
+        const otherUser = chat.user;
+        const lastMsg = chat.last_message;
+        if (!otherUser) return;
+        const div = document.createElement('div');
+        div.className = 'flex items-center gap-3 p-3 rounded hover:bg-cyan-900/30 cursor-pointer';
+        div.innerHTML = `<div class="w-10 h-10 rounded-full bg-cyan-900 flex items-center justify-center text-lg font-bold text-cyan-200">${otherUser.name ? otherUser.name[0] : '?'}</div><div><div class="font-semibold text-cyan-200">${otherUser.name}</div><div class="text-cyan-300 text-xs">${otherUser.email}</div><div class="text-cyan-400 text-xs mt-1">${lastMsg.content.length > 32 ? lastMsg.content.slice(0,32)+'…' : lastMsg.content}</div></div>`;
+        div.onclick = () => openChat(otherUser);
+        container.appendChild(div);
+      });
+    }
+    async function searchUsers(query) {
+      const token = localStorage.getItem('access_token');
+      if (!token) return [];
+      const res = await fetch('/users?email=' + encodeURIComponent(query), { headers: { 'Authorization': 'Bearer ' + token } });
+      if (!res.ok) return [];
+      return await res.json();
+    }
+    async function showUserResults(users) {
+      const results = document.getElementById('userResults');
+      results.innerHTML = '';
+      if (!users.length) {
+        results.innerHTML = '<div class="text-cyan-400">No users found.</div>';
+        return;
+      }
+      users.forEach(u => {
+        if (u.id === currentUser) return;
+        // Don't show users with existing chats
+        if (existingChats.some(c => (c.sender_id === u.id || c.recipient_id === u.id))) return;
+        const div = document.createElement('div');
+        div.className = 'flex items-center gap-3 p-2 rounded hover:bg-cyan-900/30 cursor-pointer';
+        div.innerHTML = `<div class="w-8 h-8 rounded-full bg-cyan-900 flex items-center justify-center text-base font-bold text-cyan-200">${u.name ? u.name[0] : '?'}</div><div><div class="font-semibold text-cyan-200">${u.name}</div><div class="text-cyan-300 text-xs">${u.email}</div></div>`;
+        div.onclick = () => { openChat(u); document.getElementById('newChatSection').classList.add('hidden'); };
+        results.appendChild(div);
+      });
+    }
+    document.getElementById('userSearch').addEventListener('input', async function() {
+      const q = this.value.trim();
+      if (!q) { showUserResults([]); return; }
+      let users = await searchUsers(q);
+      showUserResults(users);
+    });
+    async function openChat(user) {
+      currentChatUser = user;
+      document.getElementById('chatWindow').classList.remove('hidden');
+      document.getElementById('newChatSection').classList.add('hidden');
+      document.getElementById('chatAvatar').textContent = user.name ? user.name[0] : '?';
+      document.getElementById('chatName').textContent = user.name || '';
+      document.getElementById('chatEmail').textContent = user.email || '';
+      await loadChatHistory(user.id);
+    }
+    async function loadChatHistory(otherUserId) {
+      const token = localStorage.getItem('access_token');
+      if (!token) return;
+      const selfId = parseJwt(token).sub;
+      // Fetch chat history from backend
+      const res = await fetch(`/global-chat/${selfId}/${otherUserId}`, { headers: { 'Authorization': 'Bearer ' + token } });
+      if (!res.ok) { document.getElementById('messages').innerHTML = '<div class="text-cyan-400">No messages yet.</div>'; return; }
+      chatHistory = await res.json();
+      renderMessages();
+    }
+    function renderMessages() {
+      const messagesDiv = document.getElementById('messages');
+      messagesDiv.innerHTML = '';
+      chatHistory.forEach(msg => {
+        const isSelf = msg.sender_id === currentUser;
+        const div = document.createElement('div');
+        div.className = `flex ${isSelf ? 'justify-end' : 'justify-start'} mb-2`;
+        div.innerHTML = `<div class="max-w-xl px-5 py-3 rounded-lg ${isSelf ? 'bg-cyan-700 text-white' : 'bg-cyan-900 text-cyan-100'}">${msg.content}</div>`;
+        messagesDiv.appendChild(div);
+      });
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+    document.getElementById('chatForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const input = document.getElementById('chatInput');
+      const text = input.value.trim();
+      if (!text || !currentChatUser) return;
+      const token = localStorage.getItem('access_token');
+      const selfId = parseJwt(token).sub;
+      // Send message to backend
+      const res = await fetch(`/global-chat/${selfId}/${currentChatUser.id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ content: text })
+      });
+      if (res.ok) {
+        input.value = '';
+        await loadChatHistory(currentChatUser.id);
+        // Refresh existing chats
+        existingChats = await fetchExistingChats();
+        renderExistingChats();
+      }
+    });
+    document.getElementById('startNewChatBtn').onclick = function() {
+      document.getElementById('newChatSection').classList.remove('hidden');
+      document.getElementById('chatWindow').classList.add('hidden');
+      document.getElementById('userSearch').value = '';
+      document.getElementById('userResults').innerHTML = '';
+    };
+    // On page load, fetch all users and existing chats
+    window.onload = async function() {
+      const token = localStorage.getItem('access_token');
+      if (!token) return;
+      currentUser = parseJwt(token).sub;
+      allUsers = await fetchAllUsers();
+      existingChats = await fetchExistingChats();
+      renderExistingChats();
+      // Default: show chat with first user if any
+      if (existingChats.length) {
+        const firstOtherId = existingChats[0].sender_id === currentUser ? existingChats[0].recipient_id : existingChats[0].sender_id;
+        const firstUser = allUsers.find(u => u.id === firstOtherId);
+        if (firstUser) openChat(firstUser);
+      } else {
+        document.getElementById('newChatSection').classList.remove('hidden');
+      }
+    };
+  </script>
+</body>
+</html>
