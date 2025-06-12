@@ -454,47 +454,49 @@
           // Drag nodes within canvas
           function makeNodeInteractive(node) {
             node.style.position = 'absolute';
-            // --- Add delete button ---
-            const deleteBtn = document.createElement('button');
-            deleteBtn.className = 'node-delete-btn';
-            deleteBtn.innerHTML = '<i class="fas fa-times"></i>';
-            deleteBtn.title = 'Delete node';
-            deleteBtn.style.position = 'absolute';
-            deleteBtn.style.top = '2px';
-            deleteBtn.style.right = '2px';
-            deleteBtn.style.width = '22px';
-            deleteBtn.style.height = '22px';
-            deleteBtn.style.background = 'rgba(0,0,0,0.5)';
-            deleteBtn.style.border = 'none';
-            deleteBtn.style.borderRadius = '50%';
-            deleteBtn.style.color = 'cyan';
-            deleteBtn.style.display = 'none';
-            deleteBtn.style.zIndex = 10;
-            deleteBtn.style.cursor = 'pointer';
-            node.appendChild(deleteBtn);
-            node.addEventListener('mouseenter', () => { deleteBtn.style.display = 'block'; });
-            node.addEventListener('mouseleave', () => { deleteBtn.style.display = 'none'; });
-            deleteBtn.addEventListener('click', function(e) {
-              e.stopPropagation();
-              // Remove all lines connected to this node
-              lines.filter(obj => obj.from === node || obj.to === node).forEach(obj => {
-                obj.line.remove();
-                if (obj.line.positionOverlay && typeof obj.line.positionOverlay === 'function') {
-                  // Remove overlay if present
-                  arrowOverlays = arrowOverlays.filter(o => {
-                    if (o && o.parentNode && o.parentNode.contains(o)) {
-                      if (o.line === obj.line) { o.remove(); return false; }
-                    }
-                    return true;
-                  });
-                }
+            // --- Add delete button only if not view-only ---
+            if (document.getElementById('view-only-banner') == null) {
+              const deleteBtn = document.createElement('button');
+              deleteBtn.className = 'node-delete-btn';
+              deleteBtn.innerHTML = '<i class="fas fa-times"></i>';
+              deleteBtn.title = 'Delete node';
+              deleteBtn.style.position = 'absolute';
+              deleteBtn.style.top = '2px';
+              deleteBtn.style.right = '2px';
+              deleteBtn.style.width = '22px';
+              deleteBtn.style.height = '22px';
+              deleteBtn.style.background = 'rgba(0,0,0,0.5)';
+              deleteBtn.style.border = 'none';
+              deleteBtn.style.borderRadius = '50%';
+              deleteBtn.style.color = 'cyan';
+              deleteBtn.style.display = 'none';
+              deleteBtn.style.zIndex = 10;
+              deleteBtn.style.cursor = 'pointer';
+              node.appendChild(deleteBtn);
+              node.addEventListener('mouseenter', () => { deleteBtn.style.display = 'block'; });
+              node.addEventListener('mouseleave', () => { deleteBtn.style.display = 'none'; });
+              deleteBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                // Remove all lines connected to this node
+                lines.filter(obj => obj.from === node || obj.to === node).forEach(obj => {
+                  obj.line.remove();
+                  if (obj.line.positionOverlay && typeof obj.line.positionOverlay === 'function') {
+                    // Remove overlay if present
+                    arrowOverlays = arrowOverlays.filter(o => {
+                      if (o && o.parentNode && o.parentNode.contains(o)) {
+                        if (o.line === obj.line) { o.remove(); return false; }
+                      }
+                      return true;
+                    });
+                  }
+                });
+                lines = lines.filter(obj => obj.from !== node && obj.to !== node);
+                // Remove node from DOM and nodeData
+                delete nodeData[node.id];
+                node.remove();
+                setTimeout(saveStepMap, 100);
               });
-              lines = lines.filter(obj => obj.from !== node && obj.to !== node);
-              // Remove node from DOM and nodeData
-              delete nodeData[node.id];
-              node.remove();
-              setTimeout(saveStepMap, 100);
-            });
+            }
             node.addEventListener('mousedown', function(e) {
               if (e.button !== 0) return;
               dragNode = node;
@@ -596,6 +598,7 @@
             });
             node.addEventListener('dblclick', e => {
               e.stopPropagation();
+              if (document.getElementById('view-only-banner') != null) return; // Disable double-click in view-only mode
               window.location.href = 'step.html?step_id=' + encodeURIComponent(node.id) + '&step_name=' + encodeURIComponent(nodeData[node.id]?.name || '');
             });
           }
@@ -752,10 +755,6 @@
           showFlowPaletteBtn.addEventListener('click', function() {
             flowPaletteMenu.style.display = 'flex'; // Show the menu
             showFlowPaletteBtn.style.display = 'none'; // Hide the "+" button
-            if (document.getElementById('view-only-banner')) {
-              var stepBlock = document.querySelector('#flow-palette-menu .node[data-type="step"]');
-              if (stepBlock) stepBlock.style.display = 'none';
-            }
           });
           // On window resize, update all lines
           window.addEventListener('resize', () => {
@@ -912,6 +911,7 @@
           }
 
           function restoreStepMap(stepMap) {
+            console.log( '[restoreStepMap] banner present?', !!document.getElementById('view-only-banner') );
             // Remove all current nodes and lines
             canvas.innerHTML = '<button class="fullscreen-btn glass p-2 rounded holo-glow" onclick="toggleFullScreen()"><i class="fas fa-expand" aria-hidden="true"></i></button>';
             nodeData = {}; lines = []; arrowOverlays = []; idCounter = 0;
@@ -992,8 +992,15 @@
                 node.remove();
                 setTimeout(saveStepMap, 100);
               });
-              node.appendChild(delBtn);
-              node.addEventListener('mouseenter', () => { delBtn.style.display = 'block'; });
+              const banner = document.getElementById('view-only-banner');
+              console.log('[node-loop]', n.id, 'banner is', banner);
+              if (banner == null) {
+                console.log('[node-loop] appending delBtn to', n.id);
+                node.appendChild(delBtn);
+                node.addEventListener('mouseenter', () => { delBtn.style.display = 'block'; });
+              } else {
+                console.log('[node-loop] SKIPPING delBtn on', n.id);
+              }
               node.addEventListener('mouseleave', () => { delBtn.style.display = 'none'; });
               canvas.appendChild(node);
               nodeData[node.id] = { type: n.type, name: n.name };
@@ -1047,14 +1054,16 @@
               }
             };
           }
+          
 
           document.addEventListener('DOMContentLoaded', function() {
             console.log('DOMContentLoaded');
             loadStepMap();
             hookStepMapPersistence();
+            console.log(document.getElementById('view-only-banner'));
             // Hide step block if view-only
-            if (document.getElementById('view-only-banner')) {
-              var stepBlock = document.querySelector('#flow-palette-menu .node[data-type="step"]');
+            if (document.getElementById('view-only-banner') != null) {
+              var stepBlock = document.getElementById('flow-palette-menu');
               if (stepBlock) stepBlock.style.display = 'none';
             }
           });
@@ -1758,6 +1767,13 @@ function disableEditingUI() {
     banner.textContent = 'View Only: You do not have permission to edit this experiment.';
     banner.className = 'fixed top-0 left-0 w-full bg-yellow-900 text-yellow-200 text-center py-2 z-50';
     document.body.appendChild(banner);
+    var stepBlock = document.getElementById('flow-palette-menu');
+    if (stepBlock) stepBlock.style.display = 'none';
+    console.log("Is this line 1765 bullshit first....");
+    const elements = document.getElementsByClassName('node-delete-btn');
+    while (elements.length > 0) {
+      elements[0].parentNode.removeChild(elements[0]);
+    }
   }
 }
 function showAccessDenied() {

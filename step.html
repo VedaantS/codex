@@ -64,7 +64,7 @@
           <path d="M80 0 L0 0 0 80" class="stroke-line" />
         </pattern>
       </defs>
-      <rect width="100%" height="100%" fill="url(#grid-step)"
+      <rect width="100%" height="100%" fill="url(#grid-step)"></rect>
     </svg>
     
     <h2 class="text-4xl font-bold text-cyan-200 mb-6">
@@ -479,73 +479,10 @@ async function handleFilesUpload(files) {
   document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('textarea').forEach(addCopilotToTextarea);
   });
-  </script>
 
+  </script>
   <footer class="py-8 text-center glass mt-16 relative z-10 border-t border-cyan-500/10">
     <p class="text-sm text-cyan-200">&copy; 2025 Atlantis. All rights reserved.</p>
   </footer>
-
-  <script>
-  // --- RBAC: Enforce permissions on step.html ---
-  function getStepIdFromQuery() {
-    const params = new URLSearchParams(window.location.search);
-    return params.get('step_id');
-  }
-  function getToken() {
-    return localStorage.getItem('access_token');
-  }
-  function getTokenUserId() {
-    const token = getToken();
-    if (!token) return null;
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      return payload.sub || payload.identity || payload.user_id || payload.id;
-    } catch (e) { return null; }
-  }
-  async function enforceStepRBAC() {
-    const stepId = getStepIdFromQuery();
-    const token = getToken();
-    if (!stepId || !token) return;
-    try {
-      const res = await fetch(`/steps/${encodeURIComponent(stepId)}`, { headers: { 'Authorization': 'Bearer ' + token } });
-      if (res.status === 403) {
-        showAccessDenied();
-        return;
-      }
-      if (!res.ok) return;
-      const step = await res.json();
-      // RBAC: Only allow edit if owner or collaborator
-      const userId = getTokenUserId();
-      const canEdit = (step.experiment_owner_id === userId) || (Array.isArray(step.collaborators) && step.collaborators.includes(userId));
-      if (!canEdit) {
-        disableEditingUI();
-      }
-    } catch (e) { showAccessDenied(); }
-  }
-  function showAccessDenied() {
-    // Hide main UI and show overlay
-    document.body.innerHTML = `<div class='fixed inset-0 flex items-center justify-center bg-black/90 z-50'><div class='glass rounded-2xl p-12 text-center max-w-lg'><h2 class='text-3xl font-bold text-red-400 mb-4'>Access Denied</h2><p class='text-cyan-200 mb-4'>You do not have permission to view or edit this step.</p><a href='/' class='text-cyan-300 underline'>Return Home</a></div></div>`;
-  }
-  function disableEditingUI() {
-    // Hide or disable editing UI elements (step save, editors, etc)
-    const saveBtn = document.getElementById('save-step');
-    if (saveBtn) saveBtn.style.display = 'none';
-    const editors = document.querySelectorAll('.editor');
-    editors.forEach(e => e.setAttribute('readonly', 'readonly'));
-    const resultsEditor = document.getElementById('results-editor');
-    if (resultsEditor) resultsEditor.setAttribute('readonly', 'readonly');
-    // Optionally, show a banner
-    const main = document.querySelector('section#step-detail');
-    if (main) {
-      const banner = document.createElement('div');
-      banner.className = 'fixed top-0 left-0 w-full bg-yellow-900 text-yellow-200 text-center py-2 z-50';
-      banner.textContent = 'View Only: You do not have edit access to this step.';
-      main.prepend(banner);
-    }
-  }
-  document.addEventListener('DOMContentLoaded', enforceStepRBAC);
-  </script>
-
 </body>
-
 </html>
